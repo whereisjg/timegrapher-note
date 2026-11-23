@@ -349,92 +349,6 @@ const TG = (() => {
     return ts.map((t, i) => t - (f.a + f.P * (ns[i] - f.n0) + f.c * (ns[i] & 1)));
   }
 
-  // drop ticks far off the fitted line (4 × MAD), refitting until stable
-  function robust(ts, ns) {
-    let kt = ts.slice(), kn = ns.slice();
-    for (let it = 0; it < 4; it++) {
-      const f = fit(kt, kn);
-      if (!f) throw new Error('분석에 실패했습니다. 다시 녹음해 주세요.');
-      const r = residuals(f, kt, kn);
-      const lim = Math.max(4 * median(r.map(Math.abs)) * 1.4826, 0.0003);
-      const nt = [], nn = [];
-      r.forEach((v, i) => { if (Math.abs(v) <= lim) { nt.push(kt[i]); nn.push(kn[i]); } });
-      if (nt.length === kt.length) break;
-      kt = nt; kn = nn;
-    }
-    return { kt, kn };
-  }
-
-  // A tick is several sounds (unlock, impulse, drop). A threshold crossing can land on the first
-  // sound in one tick and the second in the next, splitting the trace into bands ~ms apart and
-  // biasing rate and beat error. Re-time each tick by aligning it with the average tick of the
-  // same parity, then place both parities at the onset of their own average tick.
-  function refine(env, sr, ts, ns, T) {
-    const D = Math.max(1, Math.round(sr / 12000)), fs = sr / D;
-    const n = Math.floor(env.length / D), e = new Float32Array(n);
-    for (let i = 0; i < n; i++) { let s = 0; for (let k = 0; k < D; k++) s += env[i * D + k]; e[i] = s / D; }
-    const pre = Math.round(0.006 * fs), L = pre + Math.round(Math.min(0.025, 0.35 * T) * fs);
-    const M = Math.round(0.004 * fs);
-    const out = ts.slice();
-    const f0 = fit(ts, ns), r0 = f0 ? residuals(f0, ts, ns) : ts.map(() => 0);
-    for (const par of [0, 1]) {
-      const idx = [];
-      for (let i = 0; i < ts.length; i++) if ((ns[i] & 1) === par) idx.push(i);
-      // seed the first template with the densest 0.5 ms group of residuals, so a near 50/50 split
-      // does not average into a two-humped tick
-      const rs = idx.map(i => r0[i]).sort((a, b) => a - b);
-      let lo = 0, best = 0, bestLo = 0;
-      for (let hi = 0; hi < rs.length; hi++) {
-        while (rs[hi] - rs[lo] > 0.0005) lo++;
-        if (hi - lo > best) { best = hi - lo; bestLo = lo; }
-      }
-      const r1 = rs[bestLo], r2 = rs[bestLo + best];
-      const seed = idx.filter(i => r0[i] >= r1 && r0[i] <= r2);
-      let sel = seed.length >= 5 ? seed : idx;
-      const template = () => {
-        const tp = new Float64Array(L); let c = 0;
-        for (const i of sel) {
-          const s0 = Math.round(out[i] * fs) - pre;
-          if (s0 < 0 || s0 + L >= n) continue;
-          for (let j = 0; j < L; j++) tp[j] += e[s0 + j];
-          c++;
-        }
-        if (c) for (let j = 0; j < L; j++) tp[j] /= c;
-        return c >= 5 ? tp : null;
-      };
-      for (let pass = 0; pass < 3; pass++) {
-        const tp = template();
-        if (!tp) break;
-        let m = 0; for (let j = 0; j < L; j++) m += tp[j]; m /= L;
-        const z = tp.map(v => v - m);
-        for (const i of idx) {
-          const s0 = Math.round(out[i] * fs) - pre;
-          if (s0 - M - 1 < 0 || s0 + L + M + 1 >= n) continue;
-          const cor = l => { let s = 0; for (let j = 0; j < L; j++) s += z[j] * e[s0 + l + j]; return s; };
-          let bl = 0, bc = -Infinity;
-          for (let l = -M; l <= M; l++) { const v = cor(l); if (v > bc) { bc = v; bl = l; } }
-          const a = cor(bl - 1), b = cor(bl + 1), den = a - 2 * bc + b;
-          const fr = den < 0 ? Math.max(-0.5, Math.min(0.5, 0.5 * (a - b) / den)) : 0;
-          out[i] += (bl + fr) / fs;
-        }
-        sel = idx;
-      }
-      // shift the parity so its time marks the onset of its average tick (30 % rise, as in detection)
-      const tp = template();
-      if (!tp) continue;
-      let base = 0; const bN = Math.max(1, Math.round(0.002 * fs));
-      for (let j = 0; j < bN; j++) base += tp[j];
-      base /= bN;
-      let top = 0; for (let j = 0; j < L; j++) top = Math.max(top, tp[j]);
-      const thr = base + 0.3 * (top - base);
-      let j = 1; while (j < L && tp[j] < thr) j++;
-      if (j >= L) continue;
-      const on = j - 1 + (thr - tp[j - 1]) / (tp[j] - tp[j - 1] || 1);
-      for (const i of idx) out[i] += (on - pre) / fs;
-    }
-    return out;
-  }
-
   // average tick shape -> lift time -> amplitude
   function shapeAmp(avg, cnt, sr, T, la, pre) {
     const L = avg.length;
@@ -472,17 +386,9 @@ const TG = (() => {
     for (let j = Math.max(bN, main - back); j < main - pw; j++) {
       if (sm[j] - base > minH && isPk(j)) { unlock = j; break; }
     }
-    let start = -1;
-    if (unlock >= 0) {
-      const half = 0.5 * (sm[unlock] - base);
-      start = unlock;
-      while (start > bN && sm[start - 1] - base > half) start--;
-    }
-    let drop = main;
-    const fwd = Math.round(0.003 * sr);
-    for (let j = main + 1; j < Math.min(L - pw, main + fwd); j++) {
-      if (sm[j] - base >= 0.3 * span && isPk(j)) drop = j;
-    }
+    // lift time = unlock peak → loudest peak (drop), the same landmarks a timegrapher uses
+    const start = unlock;
+    const drop = main;
     let amp = null, liftMs = null;
     if (start >= 0 && drop > start) {
       liftMs = (drop - start) / sr * 1000;
@@ -540,10 +446,21 @@ const TG = (() => {
       } else miss++;
     }
 
-    // re-time every tick against the average tick of its parity, then robust fit
-    let { kt: keepT, kn: keepN } = robust(refine(env, sr, ts, ns, T), ns);
+    // robust fit
+    let keepT = ts.slice(), keepN = ns.slice(), f = null;
+    for (let it = 0; it < 4; it++) {
+      f = fit(keepT, keepN);
+      if (!f) throw new Error('분석에 실패했습니다. 다시 녹음해 주세요.');
+      const r = residuals(f, keepT, keepN);
+      const mad = median(r.map(Math.abs)) * 1.4826;
+      const lim = Math.max(4 * mad, 0.0003);
+      const nt = [], nn = [];
+      r.forEach((v, i) => { if (Math.abs(v) <= lim) { nt.push(keepT[i]); nn.push(keepN[i]); } });
+      if (nt.length === keepT.length) break;
+      keepT = nt; keepN = nn;
+    }
     if (keepT.length < 30) throw new Error('일정한 틱을 충분히 찾지 못했습니다. bph 설정을 확인하거나 다시 녹음해 주세요.');
-    let f = fit(keepT, keepN);
+    f = fit(keepT, keepN);
     const res = residuals(f, keepT, keepN);
     const sd = Math.sqrt(res.reduce((s, v) => s + v * v, 0) / res.length);
 
@@ -744,20 +661,110 @@ const TG = (() => {
     };
   }
 
-  // auto: individual ticks first; fall back to folding when they are not clear enough
+  /* ===== template mode (default) =====
+     Rate comes from folding (robust at any signal level). Beat error and amplitude come from the
+     folded tick shapes: each beat's own unlock and drop are located in its averaged waveform,
+     so tic and toc are always timed by the same sound even when their loudness pattern differs. */
+  function foldFull(y, sr, i0, i1, P2, N) {
+    const s = new Float64Array(N), c = new Float64Array(N);
+    const step = N / (P2 * sr);
+    let ph = ((i0 / sr) % P2) / P2 * N;
+    for (let i = i0; i < i1; i++) {
+      const b = ph | 0, bb = b < N ? b : N - 1;
+      s[bb] += Math.abs(y[i]); c[bb]++;
+      ph += step; if (ph >= N) ph -= N;
+    }
+    for (let b = 0; b < N; b++) s[b] = c[b] ? s[b] / c[b] : 0;
+    return s;
+  }
+  function circWin(p, center, pre, post) {
+    const N = p.length, out = new Float64Array(pre + post);
+    for (let j = 0; j < pre + post; j++) out[j] = p[(((center - pre + j) % N) + N) % N];
+    return out;
+  }
+  function smoothArr(a, w) {
+    const o = new Float64Array(a.length); let acc = 0;
+    for (let j = 0; j < a.length; j++) { acc += a[j]; if (j >= w) acc -= a[j - w]; o[j] = acc / Math.min(j + 1, w); }
+    return o;
+  }
+  function argmaxCirc(p, from, to) {
+    const N = p.length; let bi = from;
+    for (let i = from; i <= to; i++) if (p[((i % N) + N) % N] > p[((bi % N) + N) % N]) bi = i;
+    return ((bi % N) + N) % N;
+  }
+  // sub-sample lag of b against a (b delayed = positive), searched within ±maxLag
+  function lagOf(a, b, maxLag) {
+    const n = a.length; let best = -Infinity, bl = 0; const cs = {};
+    for (let l = -maxLag; l <= maxLag; l++) {
+      let s = 0;
+      for (let k = Math.max(0, -l); k < Math.min(n, n - l); k++) s += a[k] * b[k + l];
+      cs[l] = s; if (s > best) { best = s; bl = l; }
+    }
+    const c0 = cs[bl - 1], c2 = cs[bl + 1];
+    if (c0 === undefined || c2 === undefined) return bl;
+    const den = c0 - 2 * best + c2;
+    return bl + (den < 0 ? Math.max(-0.5, Math.min(0.5, 0.5 * (c0 - c2) / den)) : 0);
+  }
+
+  function analyzeTpl(x, sr, opts) {
+    const la = opts.la || 52;
+    const base = analyzeFold(x, sr, opts);
+    const T0 = base.T, P = T0 / (1 + base.rate / 86400), P2 = 2 * P;
+    const y = highpass(highpass(x, sr, 2000), sr, 2000);
+    const N = Math.round(P2 * sr);
+    const segN = Math.round(Math.max(2, Math.min(4, 24 * T0)) * sr);
+    const nSeg = Math.max(1, Math.floor(y.length / segN));
+    const G = smoothArr(foldFull(y, sr, 0, nSeg * segN, P2, N), Math.max(1, Math.round(0.00015 * sr)));
+
+    // the two beats: loudest sound, and the loudest one half a period away
+    const dA = argmaxCirc(G, 0, N - 1);
+    const half = Math.round(N / 2), q = Math.round(N / 4);
+    const dB = argmaxCirc(G, dA + half - q, dA + half + q);
+    const pre = Math.round(Math.min(0.020, 0.45 * T0) * sr), post = Math.round(Math.min(0.012, 0.25 * T0) * sr);
+    const wA = circWin(G, dA, pre, post), wB = circWin(G, dB, pre, post);
+    const sA = shapeAmp(wA, 1, sr, T0, la, pre), sB = shapeAmp(wB, 1, sr, T0, la, pre);
+    if (!(sA.shape.start >= 0) || !(sB.shape.start >= 0)) throw new Error('틱 소리의 시작(언락)을 구분하지 못했습니다. 시계를 마이크에 더 가까이 대고 다시 재 주세요.');
+
+    // beat error: time from beat A's unlock to beat B's unlock, against one beat period
+    const uA = dA - pre + sA.shape.start, uB = dB - pre + sB.shape.start;
+    const sep = ((((uB - uA) % N) + N) % N) / sr;
+    const c = sep - P;                       // signed: + = toc late
+    const beatErr = Math.abs(c) * 1000;
+    const amps = [sA.amp, sB.amp].filter(a => a);
+    const amp = amps.length ? amps.reduce((s, a) => s + a, 0) / amps.length : null;
+    const lifts = [sA.liftMs, sB.liftMs].filter(a => a);
+    const liftMs = lifts.length ? lifts.reduce((s, a) => s + a, 0) / lifts.length : null;
+
+    // trace: per segment, where each beat lands against the overall template
+    const maxLag = Math.round(0.003 * sr);
+    const trace = [];
+    for (let s = 0; s < nSeg; s++) {
+      const S = smoothArr(foldFull(y, sr, s * segN, (s + 1) * segN, P2, N), Math.max(1, Math.round(0.00015 * sr)));
+      const t = (s + 0.5) * segN / sr;
+      const drift = (P - T0) / P * t;        // seconds behind the nominal grid
+      const la_ = lagOf(wA, circWin(S, dA, pre, post), maxLag) / sr;
+      const lb_ = lagOf(wB, circWin(S, dB, pre, post), maxLag) / sr;
+      trace.push({ t, odd: 0, y: -(drift + la_) * 1000 });
+      trace.push({ t, odd: 1, y: -(drift + lb_ + c) * 1000 });
+    }
+
+    return {
+      mode: base.snr < 25 ? 'fold' : 'tick', engine: 'template',
+      bph: base.bph, bphAuto: base.bphAuto, T: T0, rate: base.rate, beatErr, amp, liftMs, la,
+      used: Math.round(nSeg * segN / sr / T0), detected: base.detected, segments: nSeg, dur: base.dur,
+      sdMs: base.sdMs, snr: base.snr, trace, shape: sA.shape
+    };
+  }
+
+  // auto: template engine; the free tier ('tick') only accepts clear signals
   function measure(x, sr, opts) {
     const method = opts.method || 'auto';
-    if (method === 'tick') return analyze(x, sr, opts);
-    if (method === 'fold') return analyzeFold(x, sr, opts);
-    let r = null, err = null;
-    try { r = analyze(x, sr, opts); } catch (e) { err = e; }
-    const shaky = !r || r.used < (r.dur * r.bph / 3600) * 0.6 || r.sdMs > 1.0;
-    if (!shaky) return r;
-    try {
-      const f = analyzeFold(x, sr, opts);
-      if (f.snr >= 6) return f;
-      return r || f;
-    } catch (e2) { if (r) return r; throw err || e2; }
+    const r = analyzeTpl(x, sr, opts);
+    if (method === 'tick' && r.snr < 25) {
+      const e = new Error('틱 소리가 약해 정확히 재기 어렵습니다. 시계 옆면을 마이크 구멍에 바로 대고 조용한 곳에서 다시 재 주세요.');
+      e.weak = true; throw e;
+    }
+    return r;
   }
 
   // synthetic recording for the sample state
@@ -788,7 +795,7 @@ const TG = (() => {
     return { x, sr };
   }
 
-  return { analyze, analyzeFold, measure, synth, STD_BPH };
+  return { analyze, analyzeFold, analyzeTpl, measure, synth, STD_BPH };
 })();
 
 
