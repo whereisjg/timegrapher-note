@@ -1,0 +1,1180 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>window.__APP__=true</script></head><body><title>타임그래퍼 노트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: instrument panel — controls left, readout + chart-paper trace right; stacks on phones */
+:root{
+  --bg:#EDF0F1; --surface:#FFFFFF; --ink:#14191C; --muted:#5B666C; --line:#D2D9DC; --grid:#E3E8EA;
+  --accent:#8F6414; --accent-ink:#FFFFFF; --tic:#0E7A84; --toc:#B5541C;
+  --ok:#1D7A4C; --warn:#A86E12; --bad:#B0281F; --chip:#F2F5F6;
+  --f-body:"IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1315; --surface:#161C1F; --ink:#E5EBED; --muted:#8B989E; --line:#2A3337; --grid:#1F272B;
+  --accent:#D3A24A; --accent-ink:#1A1408; --tic:#3DB6C1; --toc:#E3894F;
+  --ok:#4DB57E; --warn:#D9A441; --bad:#E5675C; --chip:#1D2427; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1315; --surface:#161C1F; --ink:#E5EBED; --muted:#8B989E; --line:#2A3337; --grid:#1F272B;
+  --accent:#D3A24A; --accent-ink:#1A1408; --tic:#3DB6C1; --toc:#E3894F;
+  --ok:#4DB57E; --warn:#D9A441; --bad:#E5675C; --chip:#1D2427; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:24px 48px}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:20px}
+header h1{font-size:1.6rem;font-weight:600;margin:0;letter-spacing:-0.01em;text-wrap:balance}
+header p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:14px;min-width:0}
+.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.field{display:grid;gap:6px}
+select,input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+.hint{font-size:.8rem;color:var(--muted);margin:0}
+.btn{font:inherit;font-weight:600;border-radius:8px;padding:11px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:center}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn:disabled{opacity:.5;cursor:default}
+#file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.status{font-size:.85rem;color:var(--muted);min-height:1.3em;margin:0}
+.status.err{color:var(--bad)}
+.readout{display:grid;gap:14px}
+.rate-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px}
+.rate{font-family:var(--f-mono);font-size:3.1rem;font-weight:500;line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+.rate small{font-size:1rem;color:var(--muted);margin-left:6px;letter-spacing:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.75rem;padding:3px 9px;border-radius:999px;background:var(--chip);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:currentColor}
+.chip.bad{color:var(--bad);border-color:currentColor}
+.chip.warn{color:var(--warn);border-color:currentColor}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);padding:10px 12px;display:grid;gap:2px;min-width:0}
+.stat b{font-family:var(--f-mono);font-weight:500;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.75rem;color:var(--muted)}
+.sample-tag{font-size:.75rem;color:var(--accent);font-weight:600}
+canvas{width:100%;display:block}
+#trace{height:230px}
+#shape{height:130px}
+.legend{display:flex;gap:14px;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.85rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:500;color:var(--muted);font-size:.75rem}
+td.num{font-family:var(--f-mono);text-align:right}
+th.num{text-align:right}
+.x{background:none;border:none;color:var(--muted);cursor:pointer;font:inherit;padding:2px 6px}
+.x:hover{color:var(--bad)}
+.empty{color:var(--muted);font-size:.85rem;margin:0}
+.panel>*{min-width:0}
+#summary .chip{white-space:normal}
+@media (max-width:560px){
+  #log thead{display:none}
+  #log,#log tbody{display:block;width:100%}
+  #log tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"watch watch rate" "pos amp be" "date date del";gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  #log td{border:none;padding:0;white-space:normal}
+  #log .c-watch{grid-area:watch;font-weight:600}
+  #log .c-rate{grid-area:rate;font-size:1rem}
+  #log .c-pos{grid-area:pos;color:var(--muted)}
+  #log .c-amp{grid-area:amp;color:var(--muted)}
+  #log .c-be{grid-area:be;color:var(--muted)}
+  #log .c-date{grid-area:date;color:var(--muted);font-size:.78rem}
+  #log .c-del{grid-area:del;text-align:right}
+}
+ol.guide{margin:0;padding-left:1.2em;display:grid;gap:4px;font-size:.88rem}
+details summary{cursor:pointer;font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.probox{display:grid;gap:10px;padding:14px;border-radius:8px;background:var(--chip);border:1px solid var(--line)}
+.prolist{margin:0;padding-left:1.1em;display:grid;gap:3px;font-size:.88rem}
+h1 .chip{vertical-align:middle;font-size:.7rem}
+.addbox{display:grid;gap:12px;padding:14px;border:1px dashed var(--accent);border-radius:8px}
+input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+.mini{display:flex;gap:4px}
+.link{background:none;border:none;color:var(--accent);font:inherit;font-size:.85rem;cursor:pointer;padding:2px 4px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>타임그래퍼 노트 <span class="chip ok" id="proTag" hidden>프로</span></h1>
+    <p>시계 소리를 녹음한 파일을 올리면 하루 오차, 진폭, 비트 에러를 계산합니다. 측정값은 자세별로 기록해 두고 비교할 수 있습니다.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="setup-h">
+      <div class="label" id="setup-h">측정 설정</div>
+      <div class="field">
+        <div class="row"><label for="watch">내 시계</label>
+          <span class="mini"><button class="link" id="wEdit" type="button" hidden>편집</button><button class="link" id="wDel" type="button" hidden>삭제</button></span></div>
+        <select id="watch"></select>
+      </div>
+      <div class="addbox" id="wForm" hidden>
+        <div class="label" id="wFormTitle">새 시계 추가</div>
+        <div class="field">
+          <label for="wName">이름</label>
+          <input id="wName" type="text" maxlength="40" placeholder="예: 다이버 블랙, 아버지 선물 시계">
+        </div>
+        <div class="field">
+          <label for="wMov">무브먼트</label>
+          <select id="wMov">
+            <option value="">모름 · 직접 입력</option>
+            <option value="28800|50">ETA 2824 · 셀리타 SW200 계열 (28,800 · 50°)</option>
+            <option value="21600|53">세이코 4R · 6R · NH 계열 (21,600 · 53°)</option>
+            <option value="21600|52">미요타 8 계열 (21,600 · 52°)</option>
+            <option value="28800|52">미요타 9 계열 (28,800 · 52°)</option>
+            <option value="21600|50">ETA 2801 · 셀리타 SW216 수동 계열 (21,600 · 50°)</option>
+          </select>
+        </div>
+        <div class="two">
+          <div class="field"><label for="wBph">bph</label>
+            <select id="wBph"><option value="auto">모름 (자동)</option><option>18000</option><option>19800</option><option>21600</option><option>25200</option><option>28800</option><option>36000</option></select></div>
+          <div class="field"><label for="wLa">리프트 앵글 (°)</label><input id="wLa" type="number" min="38" max="60" step="1" value="52"></div>
+        </div>
+        <p class="hint">bph와 리프트 앵글은 시계 설명서나 무브먼트 사양에 나옵니다. 모르면 비워 두세요. bph는 소리로 추정하고, 리프트 앵글은 일반값 52°를 씁니다.</p>
+        <div class="two"><button class="btn" id="wCancel" type="button">취소</button><button class="btn primary" id="wSave" type="button">저장</button></div>
+      </div>
+      <div class="field">
+        <label for="pos">자세</label>
+        <select id="pos">
+          <option>다이얼 위</option>
+          <option>다이얼 아래</option>
+          <option>9시 아래 (용두 위)</option>
+          <option>3시 아래 (용두 아래)</option>
+          <option>6시 아래</option>
+          <option>12시 아래</option>
+        </select>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label for="bph">bph</label>
+          <select id="bph">
+            <option value="auto">자동</option>
+            <option>18000</option><option>19800</option><option>21600</option>
+            <option>25200</option><option>28800</option><option>36000</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="la">리프트 앵글 (°)</label>
+          <input id="la" type="number" min="38" max="60" step="1" value="52">
+        </div>
+      </div>
+      <div class="field">
+        <label for="method">계산 방식</label>
+        <select id="method">
+          <option value="auto">자동 (틱이 약하면 약한 신호 모드로 전환)</option>
+          <option value="tick">개별 틱</option>
+          <option value="fold" id="foldOpt">약한 신호 (겹쳐 평균)</option>
+        </select>
+      </div>
+      <p class="hint">bph는 시간당 진동 횟수(예: 28,800 · 21,600)입니다. 리프트 앵글은 진폭 계산에만 쓰이며, 모르면 일반값 52°를 두세요.</p>
+      <div class="field">
+        <label for="cal">휴대폰 보정값 (초/일)</label>
+        <input id="cal" type="number" step="0.1" value="0">
+        <p class="hint">휴대폰 녹음 회로의 시계도 하루 1~3초 정도 오차가 있습니다. 매장 타임그래퍼나 일주일 실측과 비교해 차이만큼 넣으면 모든 결과에 더해집니다.</p>
+      </div>
+      <button class="btn primary" id="liveBtn" type="button" hidden>실시간 측정 시작</button>
+      <label class="btn primary" for="file" id="pick">녹음 파일 선택</label>
+      <input id="file" type="file" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.ogg">
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <details>
+        <summary>녹음하는 법</summary>
+        <ol class="guide">
+          <li>조용한 방에서 휴대폰 녹음 앱을 일반(표준) 모드로 켭니다. 소음 제거 모드는 틱 소리를 깎아 버립니다.</li>
+          <li>휴대폰 아래쪽 마이크에 시계 뒷판이나 케이스 옆면을 직접 대고, 수건 위처럼 진동이 덜 전해지는 곳에 둡니다.</li>
+          <li>측정할 자세를 유지한 채 30~60초 녹음합니다.</li>
+          <li>오토매틱은 태엽이 충분히 감긴 상태에서 재야 진폭이 제대로 나옵니다.</li>
+        </ol>
+      </details>
+      <div class="probox" id="proBox" hidden>
+        <div class="row"><b>프로 업그레이드</b><span class="chip" id="proPrice"></span></div>
+        <ul class="prolist">
+          <li>약한 신호 모드: 케이스가 두꺼운 조용한 시계도 측정</li>
+          <li>시계 무제한 등록 (무료는 1개)</li>
+          <li>측정 기록 무제한 저장과 자세별 평균 (무료는 최근 5개)</li>
+        </ul>
+        <p class="hint">한 번 결제하면 계속 쓸 수 있고, 같은 구글 계정이면 다른 폰에서도 복원됩니다.</p>
+        <button class="btn primary" id="proBuy" type="button">프로로 업그레이드</button>
+        <p class="status" id="proMsg"></p>
+      </div>
+    </section>
+
+    <section class="panel readout" aria-labelledby="res-h">
+      <div class="row">
+        <div class="label" id="res-h">측정 결과</div>
+        <span class="sample-tag" id="sampleTag">샘플 신호 (예시 데이터)</span>
+      </div>
+      <div class="rate-row">
+        <div class="rate" id="rate">—</div>
+        <div class="chips" id="chips"></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>진폭</span><b id="amp">—</b></div>
+        <div class="stat"><span>비트 에러</span><b id="be">—</b></div>
+        <div class="stat"><span>bph</span><b id="bphOut">—</b></div>
+        <div class="stat"><span id="ticksLbl">사용한 틱</span><b id="ticks">—</b></div>
+      </div>
+      <p class="hint" id="quality"></p>
+      <div>
+        <div class="row" style="margin-bottom:6px">
+          <div class="label">트레이스</div>
+          <div class="legend" id="traceLegend"><span><i class="dot" style="background:var(--tic)"></i>짝수 틱</span><span><i class="dot" style="background:var(--toc)"></i>홀수 틱</span><span>위로 기울면 빠름</span></div>
+        </div>
+        <canvas id="trace" aria-label="시간에 따른 틱 위치 그래프" role="img"></canvas>
+      </div>
+      <div>
+        <div class="row" style="margin-bottom:6px">
+          <div class="label">평균 틱 파형</div>
+          <div class="legend" id="shapeNote"></div>
+        </div>
+        <canvas id="shape" aria-label="평균 틱 소리 파형" role="img"></canvas>
+      </div>
+      <div class="row">
+        <p class="hint">진폭은 휴대폰 마이크 특성상 ±20° 정도 오차가 있는 참고값입니다.</p>
+        <button class="btn" id="save" type="button" disabled>기록에 저장</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="log-h">
+    <div class="row">
+      <div class="label" id="log-h">측정 기록 · 이 브라우저에만 저장</div>
+      <button class="btn" id="clear" type="button" hidden>전체 삭제</button>
+    </div>
+    <div id="summary"></div>
+    <div class="tbl-wrap"><table id="log" hidden>
+      <thead><tr><th>일시</th><th>시계</th><th>자세</th><th class="num">오차 s/d</th><th class="num">진폭</th><th class="num">비트 에러</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="empty" id="logEmpty">아직 저장된 측정이 없습니다. 파일을 분석한 뒤 '기록에 저장'을 누르면 여기에 쌓입니다.</p>
+  </section>
+</div>
+
+<script>
+/* ===== Timegrapher engine (pure functions, no DOM) ===== */
+const TG = (() => {
+  const STD_BPH = [14400, 18000, 19800, 21600, 25200, 28800, 36000];
+
+  function highpass(x, sr, fc) {
+    const w0 = 2 * Math.PI * fc / sr, cs = Math.cos(w0), al = Math.sin(w0) / (2 * 0.7071);
+    const a0 = 1 + al;
+    const B0 = (1 + cs) / 2 / a0, B1 = -(1 + cs) / a0, B2 = (1 + cs) / 2 / a0;
+    const A1 = -2 * cs / a0, A2 = (1 - al) / a0;
+    const y = new Float32Array(x.length);
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (let i = 0; i < x.length; i++) {
+      const xi = x[i];
+      const yi = B0 * xi + B1 * x1 + B2 * x2 - A1 * y1 - A2 * y2;
+      x2 = x1; x1 = xi; y2 = y1; y1 = yi; y[i] = yi;
+    }
+    return y;
+  }
+
+  function envelope(x, sr, tau) {
+    const a = Math.exp(-1 / (tau * sr));
+    const e = new Float32Array(x.length);
+    let v = 0;
+    for (let i = 0; i < x.length; i++) {
+      const ax = Math.abs(x[i]);
+      v = ax > v ? ax : v * a;
+      e[i] = v;
+    }
+    return e;
+  }
+
+  function percentile(arr, p, step) {
+    const s = [];
+    for (let i = 0; i < arr.length; i += step) s.push(arr[i]);
+    s.sort((a, b) => a - b);
+    return s[Math.min(s.length - 1, Math.floor(p * s.length))];
+  }
+
+  function detect(env, sr, refr, thr) {
+    const on = [];
+    let last = -1e12;
+    for (let i = 1; i < env.length; i++) {
+      if (env[i] >= thr && env[i - 1] < thr && i - last > refr) {
+        const f = (thr - env[i - 1]) / (env[i] - env[i - 1]);
+        on.push((i - 1 + f) / sr);
+        last = i;
+      }
+    }
+    return on;
+  }
+
+  function median(a) {
+    const s = a.slice().sort((x, y) => x - y);
+    return s.length ? s[Math.floor(s.length / 2)] : NaN;
+  }
+
+  function nearestBph(T) {
+    const b = 3600 / T;
+    let best = STD_BPH[0], d = Infinity;
+    for (const s of STD_BPH) {
+      const k = Math.abs(Math.log(b / s));
+      if (k < d) { d = k; best = s; }
+    }
+    return best;
+  }
+
+  // least squares: t = a + P*n + c*odd
+  function fit(ts, ns) {
+    let S = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], R = [0, 0, 0];
+    const n0 = ns[0];
+    for (let i = 0; i < ts.length; i++) {
+      const v = [1, ns[i] - n0, (ns[i] & 1)];
+      for (let r = 0; r < 3; r++) {
+        R[r] += v[r] * ts[i];
+        for (let c = 0; c < 3; c++) S[r][c] += v[r] * v[c];
+      }
+    }
+    // gaussian elimination
+    const M = S.map((row, i) => row.concat(R[i]));
+    for (let c = 0; c < 3; c++) {
+      let p = c;
+      for (let r = c + 1; r < 3; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+      [M[c], M[p]] = [M[p], M[c]];
+      if (Math.abs(M[c][c]) < 1e-12) return null;
+      for (let r = 0; r < 3; r++) {
+        if (r === c) continue;
+        const f = M[r][c] / M[c][c];
+        for (let k = c; k < 4; k++) M[r][k] -= f * M[c][k];
+      }
+    }
+    const a = M[0][3] / M[0][0], P = M[1][3] / M[1][1], c = M[2][3] / M[2][2];
+    return { a, P, c, n0 };
+  }
+
+  function residuals(f, ts, ns) {
+    return ts.map((t, i) => t - (f.a + f.P * (ns[i] - f.n0) + f.c * (ns[i] & 1)));
+  }
+
+  // average tick shape -> lift time -> amplitude
+  function shapeAmp(avg, cnt, sr, T, la, pre) {
+    const L = avg.length;
+    const w = Math.max(1, Math.round(0.00015 * sr));
+    const sm = new Float64Array(L);
+    let acc = 0;
+    for (let j = 0; j < L; j++) {
+      acc += avg[j] / cnt;
+      if (j >= w) acc -= avg[j - w] / cnt;
+      sm[j] = acc / Math.min(j + 1, w);
+    }
+    let base = 0;
+    const bN = Math.round(0.004 * sr);
+    for (let j = 0; j < bN; j++) base += sm[j];
+    base /= bN;
+    let M = 0;
+    for (let j = 0; j < L; j++) M = Math.max(M, sm[j]);
+    const span = M - base;
+    // unlock = earliest clear peak within 15 ms before the loudest sound (drop/lock);
+    // its half-height rise marks the start of the lift
+    let nv = 0;
+    for (let j = 0; j < bN; j++) nv += (sm[j] - base) * (sm[j] - base);
+    const nstd = Math.sqrt(nv / bN);
+    const pw = Math.max(1, Math.round(0.0003 * sr));
+    const isPk = j => {
+      if (j < pw || j >= L - pw) return false;
+      for (let k = 1; k <= pw; k++) if (sm[j - k] > sm[j] || sm[j + k] > sm[j]) return false;
+      return true;
+    };
+    let main = bN;
+    for (let j = bN; j < L; j++) if (sm[j] > sm[main]) main = j;
+    const back = Math.round(Math.min(0.015, 0.3 * T) * sr);
+    const minH = Math.max(0.06 * span, 5 * nstd);
+    let unlock = -1;
+    for (let j = Math.max(bN, main - back); j < main - pw; j++) {
+      if (sm[j] - base > minH && isPk(j)) { unlock = j; break; }
+    }
+    let start = -1;
+    if (unlock >= 0) {
+      const half = 0.5 * (sm[unlock] - base);
+      start = unlock;
+      while (start > bN && sm[start - 1] - base > half) start--;
+    }
+    let drop = main;
+    const fwd = Math.round(0.003 * sr);
+    for (let j = main + 1; j < Math.min(L - pw, main + fwd); j++) {
+      if (sm[j] - base >= 0.3 * span && isPk(j)) drop = j;
+    }
+    let amp = null, liftMs = null;
+    if (start >= 0 && drop > start) {
+      liftMs = (drop - start) / sr * 1000;
+      const s = Math.sin(Math.PI * (liftMs / 1000) / (2 * T));
+      const A = la / (2 * s);
+      if (A > 130 && A < 370) amp = A;
+    }
+
+    return { amp, liftMs, shape: { sm: Array.from(sm), base, start, drop, sr, pre } };
+  }
+
+  /**
+   * x: mono Float32Array, sr: sample rate
+   * opts: { bph: 'auto' | number, la: lift angle in degrees }
+   */
+  function analyze(x, sr, opts) {
+    const la = opts.la || 52;
+    const dur = x.length / sr;
+    if (dur < 8) throw new Error('녹음이 너무 짧습니다. 최소 10초, 권장 30~60초로 녹음해 주세요.');
+
+    const y = highpass(highpass(x, sr, 2000), sr, 2000);
+    const env = envelope(y, sr, 0.0003);
+    const floor = percentile(env, 0.5, 5);
+    const top = percentile(env, 0.998, 5);
+    if (!(top > floor * 2.5)) throw new Error('틱 소리를 찾지 못했습니다. 더 조용한 곳에서, 시계를 마이크에 더 가까이 대고 녹음해 주세요.');
+    const thr = floor + 0.3 * (top - floor);
+
+    // pass 1: coarse, to estimate beat period
+    let on = detect(env, sr, Math.round(0.03 * sr), thr);
+    if (on.length < 20) throw new Error('잡힌 틱이 너무 적습니다. 마이크에 시계를 밀착하고 다시 녹음해 주세요.');
+    const iv = [];
+    for (let i = 1; i < on.length; i++) {
+      const d = on[i] - on[i - 1];
+      if (d > 0.05 && d < 0.5) iv.push(d);
+    }
+    const Test = median(iv);
+    const bphAuto = nearestBph(Test);
+    const bph = opts.bph === 'auto' ? bphAuto : +opts.bph;
+    const T = 3600 / bph;
+
+    // pass 2: refractory tied to the beat
+    on = detect(env, sr, Math.round(0.55 * T * sr), thr);
+
+    // assign beat indices
+    // an event is a tick only if it lands near a whole number of beats after the last tick;
+    // after several misses in a row, re-anchor (the earlier anchor was probably noise)
+    const ts = [on[0]], ns = [0];
+    let miss = 0;
+    for (let i = 1; i < on.length; i++) {
+      const dt = on[i] - ts[ts.length - 1];
+      const k = Math.round(dt / T);
+      const ok = k >= 1 && Math.abs(dt - k * T) < 0.2 * T;
+      if (ok || (miss >= 4 && k >= 1)) {
+        ts.push(on[i]); ns.push(ns[ns.length - 1] + k); miss = 0;
+      } else miss++;
+    }
+
+    // robust fit
+    let keepT = ts.slice(), keepN = ns.slice(), f = null;
+    for (let it = 0; it < 4; it++) {
+      f = fit(keepT, keepN);
+      if (!f) throw new Error('분석에 실패했습니다. 다시 녹음해 주세요.');
+      const r = residuals(f, keepT, keepN);
+      const mad = median(r.map(Math.abs)) * 1.4826;
+      const lim = Math.max(4 * mad, 0.0003);
+      const nt = [], nn = [];
+      r.forEach((v, i) => { if (Math.abs(v) <= lim) { nt.push(keepT[i]); nn.push(keepN[i]); } });
+      if (nt.length === keepT.length) break;
+      keepT = nt; keepN = nn;
+    }
+    if (keepT.length < 30) throw new Error('일정한 틱을 충분히 찾지 못했습니다. bph 설정을 확인하거나 다시 녹음해 주세요.');
+    f = fit(keepT, keepN);
+    const res = residuals(f, keepT, keepN);
+    const sd = Math.sqrt(res.reduce((s, v) => s + v * v, 0) / res.length);
+
+    const rate = (T / f.P - 1) * 86400;
+    const beatErr = Math.abs(f.c) * 1000;
+
+    // trace: positive = running ahead of nominal
+    const t0 = f.a;
+    const trace = keepT.map((t, i) => ({
+      t, odd: keepN[i] & 1,
+      y: ((t0 + (keepN[i] - f.n0) * T) - t) * 1000
+    }));
+
+    // amplitude from averaged tick shape
+    const pre = Math.round(0.012 * sr);
+    const post = Math.round(Math.min(0.03, 0.4 * T) * sr);
+    const L = pre + post;
+    const avg = new Float64Array(L);
+    let cnt = 0;
+    for (const t of keepT) {
+      const idx = Math.round(t * sr) - pre;
+      if (idx < 0 || idx + L >= y.length) continue;
+      for (let j = 0; j < L; j++) avg[j] += Math.abs(y[idx + j]);
+      cnt++;
+    }
+    const sa = shapeAmp(avg, cnt, sr, T, la, pre);
+    return {
+      mode: 'tick', bph, bphAuto, T, rate, beatErr, amp: sa.amp, liftMs: sa.liftMs, la,
+      used: keepT.length, detected: on.length, dur, sdMs: sd * 1000,
+      trace, shape: sa.shape
+    };
+  }
+
+  /* ===== weak-signal mode: epoch folding =====
+     Ticks too faint to pick out one by one still add up when the recording is folded
+     at the beat period. Segment profiles are cross-correlated to track phase drift. */
+  function foldSums(e, i0, i1, fs, P2, N) {
+    const s = new Float64Array(N), c = new Float64Array(N);
+    const step = N / (P2 * fs);           // bins per sample
+    let ph = ((i0 / fs) % P2) / P2 * N;   // fractional bin
+    for (let i = i0; i < i1; i++) {
+      const b = ph | 0;
+      s[b < N ? b : N - 1] += e[i]; c[b < N ? b : N - 1]++;
+      ph += step; if (ph >= N) ph -= N;
+    }
+    return { s, c };
+  }
+  function foldProfile(e, i0, i1, fs, P2, N) {
+    const { s, c } = foldSums(e, i0, i1, fs, P2, N);
+    for (let b = 0; b < N; b++) s[b] = c[b] ? s[b] / c[b] : 0;
+    return s;
+  }
+  function centered(p) {
+    let m = 0; for (const v of p) m += v; m /= p.length;
+    let s = 0; const q = new Float64Array(p.length);
+    for (let i = 0; i < p.length; i++) { q[i] = p[i] - m; s += q[i] * q[i]; }
+    s = Math.sqrt(s) || 1;
+    for (let i = 0; i < q.length; i++) q[i] /= s;
+    return q;
+  }
+  // circular lag of b relative to a (b delayed by +lag), sub-bin, searched within ±maxLag
+  function xlag(a, b, maxLag) {
+    const N = a.length;
+    let best = -Infinity, bl = 0;
+    const cor = l => { let s = 0; for (let k = 0; k < N; k++) s += a[k] * b[(k + l + N) % N]; return s; };
+    const cs = {};
+    for (let l = -maxLag; l <= maxLag; l++) { const c = cor(l); cs[l] = c; if (c > best) { best = c; bl = l; } }
+    const c0 = cs[bl - 1] !== undefined ? cs[bl - 1] : cor(bl - 1), c2 = cs[bl + 1] !== undefined ? cs[bl + 1] : cor(bl + 1);
+    const den = c0 - 2 * best + c2;
+    const frac = den < 0 ? 0.5 * (c0 - c2) / den : 0;
+    return { lag: bl + Math.max(-0.5, Math.min(0.5, frac)), corr: best };
+  }
+  function snrOf(p) {
+    const s = Array.from(p).sort((x, y) => x - y);
+    const med = s[s.length >> 1];
+    const mad = s.map(v => Math.abs(v - med)).sort((x, y) => x - y)[s.length >> 1] * 1.4826 || 1e-12;
+    return (s[s.length - 1] - med) / mad;
+  }
+
+  function analyzeFold(x, sr, opts) {
+    const la = opts.la || 52;
+    const dur = x.length / sr;
+    if (dur < 12) throw new Error('약한 신호 모드는 최소 15초, 권장 40~60초 녹음이 필요합니다.');
+    const y = highpass(highpass(x, sr, 2000), sr, 2000);
+    // energy envelope, downsampled to ~8 kHz, outliers clipped
+    const blk = Math.max(1, Math.round(sr / 4000)), fs = sr / blk;
+    const n = Math.floor(y.length / blk);
+    let e = new Float64Array(n);
+    for (let i = 0; i < n; i++) { let s = 0; for (let k = 0; k < blk; k++) { const v = y[i * blk + k]; s += v * v; } e[i] = Math.sqrt(s / blk); }
+    const srt = Array.from(e.filter((_, i) => i % 7 === 0)).sort((a, b) => a - b);
+    const cap = srt[Math.floor(srt.length * 0.5)] * 25;
+    for (let i = 0; i < n; i++) if (e[i] > cap) e[i] = cap;
+
+    // beat rate
+    let bph = opts.bph === 'auto' ? null : +opts.bph;
+    let bphAuto = bph;
+    if (!bph) {
+      const cand = [18000, 19800, 21600, 25200, 28800, 36000];
+      const i1 = Math.min(n, Math.round(15 * fs));
+      let bs = -1;
+      for (const c of cand) {
+        const P2 = 7200 / c, N = Math.round(P2 * fs);
+        const s = snrOf(foldProfile(e, 0, i1, fs, P2, N));
+        if (s > bs * 1.15) { bs = s; bph = c; }
+      }
+      bphAuto = bph;
+    }
+    const T0 = 3600 / bph;
+
+    // segments
+    const segS = Math.max(2, Math.min(4, 24 * T0));
+    const segN = Math.round(segS * fs);
+    const nSeg = Math.floor(n / segN);
+    if (nSeg < 5) throw new Error('녹음이 짧아 약한 신호 모드로 계산할 수 없습니다.');
+
+    // pass 0: coarse search over rate (±400 s/d) for the sharpest folded profile
+    const iEnd = nSeg * segN;
+    let P = T0, bestS = -1;
+    const stepRate = Math.max(2, 400 / (iEnd / fs)); // smear stays under ~5 ms
+    for (let rr = -400; rr <= 400; rr += stepRate) {
+      const Pc = T0 / (1 + rr / 86400), P2c = 2 * Pc, Nc = Math.round(P2c * fs);
+      const s = snrOf(foldProfile(e, 0, iEnd, fs, P2c, Nc));
+      if (s > bestS) { bestS = s; P = Pc; }
+    }
+    let fitInfo = null;
+    for (let pass = 1; pass < 4; pass++) {
+      const P2 = 2 * P, N = Math.round(P2 * fs);
+      const segs = [];
+      const Gs = new Float64Array(N), Gc = new Float64Array(N);
+      for (let s = 0; s < nSeg; s++) {
+        const f = foldSums(e, s * segN, (s + 1) * segN, fs, P2, N);
+        segs.push(f);
+        for (let b = 0; b < N; b++) { Gs[b] += f.s[b]; Gc[b] += f.c[b]; }
+      }
+      const tc = [], sh = [], cr = [];
+      const maxLag = Math.ceil((pass === 1 ? 0.012 : 0.006) * fs);
+      for (let s = 0; s < nSeg; s++) {
+        // compare each segment with the template built from all the OTHER segments
+        const f = segs[s], loo = new Float64Array(N), pr = new Float64Array(N);
+        for (let b = 0; b < N; b++) {
+          const cc = Gc[b] - f.c[b];
+          loo[b] = cc ? (Gs[b] - f.s[b]) / cc : 0;
+          pr[b] = f.c[b] ? f.s[b] / f.c[b] : 0;
+        }
+        const r = xlag(centered(loo), centered(pr), maxLag);
+        tc.push((s + 0.5) * segN / fs); sh.push(r.lag / fs); cr.push(r.corr);
+      }
+      // weighted line fit, dropping poorly correlated segments
+      const idx = tc.map((_, i) => i).filter(i => cr[i] > 0.05);
+      if (idx.length < 4) throw new Error('틱 소리를 찾지 못했습니다. 시계 옆면을 마이크 구멍에 바로 대고 다시 측정해 주세요.');
+      let sx = 0, sy = 0, sxx = 0, sxy = 0;
+      for (const i of idx) { sx += tc[i]; sy += sh[i]; sxx += tc[i] * tc[i]; sxy += tc[i] * sh[i]; }
+      const k = idx.length, m = (k * sxy - sx * sy) / (k * sxx - sx * sx), b0 = (sy - m * sx) / k;
+      const res = idx.map(i => sh[i] - (b0 + m * tc[i]));
+      const sd = Math.sqrt(res.reduce((s, v) => s + v * v, 0) / Math.max(1, k - 2));
+      P = P / (1 - m);
+      fitInfo = { tc, sh, idx, b0, m, sd, used: k };
+    }
+    const rate = (T0 / P - 1) * 86400;
+
+    // global profile at the final period → beat error
+    const P2 = 2 * P, N = Math.round(P2 * fs);
+    const G = foldProfile(e, 0, nSeg * segN, fs, P2, N);
+    const snr = snrOf(G);
+    const peakAt = (from, to) => {
+      let bi = from;
+      for (let i = from; i <= to; i++) if (G[(i + N) % N] > G[(bi + N) % N]) bi = i;
+      const a = G[(bi - 1 + N) % N], c = G[(bi + 1) % N], v = G[(bi + N) % N], den = a - 2 * v + c;
+      return bi + (den < 0 ? 0.5 * (a - c) / den : 0);
+    };
+    const i1 = peakAt(0, N - 1);
+    const half = Math.round(N / 2), win = Math.round(N / 4);
+    const i2 = peakAt(Math.round(i1) + half - win, Math.round(i1) + half + win);
+    const sep = (((i2 - i1) % N) + N) % N / fs;
+    const beatErr = Math.abs(sep - P) * 1000;
+
+    // amplitude: fold |y| at full rate around the loudest beat
+    const pre = Math.round(0.012 * sr), post = Math.round(Math.min(0.03, 0.4 * T0) * sr), L = pre + post;
+    const avg = new Float64Array(L);
+    const tPk = i1 / fs;  // phase of the loudest sound within 2P
+    let cnt = 0;
+    for (let t = tPk - 0.003; t + 0.04 < dur; t += P2) {
+      const idx = Math.round(t * sr) - pre;
+      if (idx < 0 || idx + L >= y.length) continue;
+      for (let j = 0; j < L; j++) avg[j] += Math.abs(y[idx + j]);
+      cnt++;
+    }
+    const sa = cnt ? shapeAmp(avg, cnt, sr, T0, la, pre) : { amp: null, liftMs: null, shape: null };
+
+    const trace = fitInfo.idx.map(i => ({
+      t: fitInfo.tc[i], odd: 0,
+      y: -((P - T0) / P * fitInfo.tc[i] + (fitInfo.sh[i] - (fitInfo.b0 + fitInfo.m * fitInfo.tc[i]))) * 1000
+    }));
+    return {
+      mode: 'fold', bph, bphAuto: bphAuto || bph, T: T0, rate, beatErr, amp: sa.amp, liftMs: sa.liftMs, la,
+      used: fitInfo.used, segments: nSeg, detected: nSeg, dur, sdMs: fitInfo.sd * 1000, snr,
+      trace, shape: sa.shape
+    };
+  }
+
+  // auto: individual ticks first; fall back to folding when they are not clear enough
+  function measure(x, sr, opts) {
+    const method = opts.method || 'auto';
+    if (method === 'tick') return analyze(x, sr, opts);
+    if (method === 'fold') return analyzeFold(x, sr, opts);
+    let r = null, err = null;
+    try { r = analyze(x, sr, opts); } catch (e) { err = e; }
+    const shaky = !r || r.used < (r.dur * r.bph / 3600) * 0.6 || r.sdMs > 1.0;
+    if (!shaky) return r;
+    try {
+      const f = analyzeFold(x, sr, opts);
+      if (f.snr >= 6) return f;
+      return r || f;
+    } catch (e2) { if (r) return r; throw err || e2; }
+  }
+
+  // synthetic recording for the sample state
+  function synth(o) {
+    const sr = o.sr || 44100, dur = o.dur || 40;
+    const T = 3600 / o.bph, P = T / (1 + o.rate / 86400);
+    const dt = (2 * T / Math.PI) * Math.asin(o.la / (2 * o.amp));
+    const x = new Float32Array(Math.round(sr * dur));
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd());
+    for (let i = 0; i < x.length; i++) x[i] = gauss() * (o.noise || 0.01) + Math.sin(i / sr * 2 * Math.PI * 60) * 0.03;
+    const click = (t, a, f) => {
+      const i0 = Math.round(t * sr), n = Math.round(0.003 * sr);
+      for (let k = 0; k < n && i0 + k < x.length; k++) {
+        if (i0 + k < 0) continue;
+        x[i0 + k] += a * Math.exp(-k / (0.00035 * sr)) * Math.sin(2 * Math.PI * f * k / sr);
+      }
+    };
+    for (let n = 0; ; n++) {
+      const t = 0.05 + n * P + (n & 1 ? o.be / 1000 : 0) + gauss() * 0.00004;
+      if (t + 0.03 > dur) break;
+      const g = (n & 1 ? 0.85 : 1) * (o.gain || 1);
+      click(t, 0.45 * g, 5200);
+      click(t + dt * 0.45, 0.3 * g, 4300);
+      click(t + dt, 0.9 * g, 4800);
+    }
+    return { x, sr };
+  }
+
+  return { analyze, analyzeFold, measure, synth, STD_BPH };
+})();
+
+
+</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  // ---- pro (Google Play in-app purchase; every feature is open outside the store build) ----
+  const BILL = window.AndroidBilling || null;
+  let pro = !BILL, proPrice = '';
+  try { if (BILL) { pro = !!BILL.isPro(); proPrice = BILL.price() || ''; } } catch (e) {}
+  const FREE_WATCHES = 1, FREE_LOGS = 5;
+  const weakHint = () => (BILL && !pro) ? ' 케이스가 두꺼워 조용한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.' : '';
+  function upsell(msg) {
+    if (!BILL || pro) return;
+    $('proMsg').textContent = msg; $('proMsg').classList.remove('err');
+    $('proBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function updateProUI() {
+    $('proBox').hidden = !BILL || pro;
+    $('proTag').hidden = !(BILL && pro);
+    $('proPrice').textContent = proPrice;
+    $('proPrice').hidden = !proPrice;
+    $('foldOpt').textContent = pro ? '약한 신호 (겹쳐 평균)' : '약한 신호 (겹쳐 평균) · 프로';
+    $('method').options[0].textContent = pro ? '자동 (틱이 약하면 약한 신호 모드로 전환)' : '자동';
+    try { renderLog(); } catch (e) {}
+  }
+  window.__billing = s => {
+    if (s && 'pro' in s && s.pro !== null) pro = !!s.pro;
+    if (s && s.price) proPrice = s.price;
+    if (s && s.msg) { $('proMsg').textContent = s.msg; $('proMsg').classList.toggle('err', !!s.err); setStatus(s.msg, !!s.err); }
+    updateProUI();
+  };
+
+  // ---- my watches (per device) ----
+  const WKEY = 'tg-watches-v1';
+  let watches = (() => { try { return JSON.parse(localStorage.getItem(WKEY) || '[]'); } catch (e) { return []; } })();
+  const saveWatches = () => { try { localStorage.setItem(WKEY, JSON.stringify(watches)); } catch (e) {} };
+  const curWatch = () => watches.find(w => w.id === $('watch').value) || null;
+  let editing = null;
+  let last = null, lastIsSample = true;
+
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmtRate = r => (r >= 0 ? '+' : '−') + Math.abs(r).toFixed(1);
+
+  function setupCanvas(c) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = c.clientWidth, h = c.clientHeight;
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { g, w, h };
+  }
+
+  function drawTrace(r) {
+    const { g, w, h } = setupCanvas($('trace'));
+    const L = 44, R = 10, Tp = 10, B = 26;
+    g.clearRect(0, 0, w, h);
+    const xs = r.trace.map(p => p.t), ys = r.trace.map(p => p.y);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    let y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const mid = (y0 + y1) / 2, half = Math.max((y1 - y0) / 2 * 1.15, 2);
+    y0 = mid - half; y1 = mid + half;
+    const X = t => L + (t - x0) / (x1 - x0 || 1) * (w - L - R);
+    const Y = v => Tp + (1 - (v - y0) / (y1 - y0)) * (h - Tp - B);
+    g.font = '11px ' + css('--f-mono'); g.fillStyle = css('--muted'); g.strokeStyle = css('--grid'); g.lineWidth = 1;
+    const step = niceStep((y1 - y0) / 5);
+    g.textAlign = 'right'; g.textBaseline = 'middle';
+    for (let v = Math.ceil(y0 / step) * step; v <= y1; v += step) {
+      g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(w - R, Y(v)); g.stroke();
+      g.fillText(fmtNum(v), L - 6, Y(v));
+    }
+    const xstep = niceStep((x1 - x0) / 6);
+    g.textAlign = 'center'; g.textBaseline = 'top';
+    for (let t = Math.ceil(x0 / xstep) * xstep; t <= x1; t += xstep) {
+      g.beginPath(); g.moveTo(X(t), Tp); g.lineTo(X(t), h - B); g.stroke();
+      g.fillText(Math.round(t) + 's', X(t), h - B + 6);
+    }
+    g.save(); g.translate(10, Tp + (h - Tp - B) / 2); g.rotate(-Math.PI / 2); g.textAlign = 'center'; g.textBaseline = 'top'; g.fillText('ms', 0, 0); g.restore();
+    const ctic = css('--tic'), ctoc = css('--toc');
+    for (const p of r.trace) {
+      g.fillStyle = p.odd ? ctoc : ctic;
+      g.beginPath(); g.arc(X(p.t), Y(p.y), r.mode === 'fold' ? 3.2 : 1.6, 0, Math.PI * 2); g.fill();
+    }
+  }
+
+  function drawShape(r) {
+    const { g, w, h } = setupCanvas($('shape'));
+    g.clearRect(0, 0, w, h);
+    if (!r.shape) { $('shapeNote').textContent = '파형 없음'; return; }
+    const s = r.shape, sm = s.sm, B = 20, Tp = 8;
+    const M = Math.max(...sm);
+    const X = j => (j / (sm.length - 1)) * w;
+    const Y = v => Tp + (1 - (v - s.base) / (M - s.base || 1)) * (h - Tp - B);
+    g.strokeStyle = css('--grid'); g.lineWidth = 1;
+    g.beginPath(); g.moveTo(0, Y(s.base)); g.lineTo(w, Y(s.base)); g.stroke();
+    g.fillStyle = css('--muted'); g.font = '11px ' + css('--f-mono'); g.textBaseline = 'top'; g.textAlign = 'center';
+    const msPer = 1000 / s.sr;
+    const preMs = s.pre * msPer, totMs = sm.length * msPer;
+    for (let rel = -Math.floor(preMs / 5) * 5; rel + preMs < totMs; rel += 5) {
+      const xp = X((rel + preMs) / msPer);
+      if (xp < 12 || xp > w - 12) continue;
+      g.fillText(rel + (rel === 0 ? ' ms' : ''), xp, h - B + 4);
+    }
+    g.strokeStyle = css('--ink'); g.lineWidth = 1.2; g.beginPath();
+    sm.forEach((v, j) => j ? g.lineTo(X(j), Y(Math.max(v, s.base))) : g.moveTo(X(j), Y(Math.max(v, s.base))));
+    g.stroke();
+    if (s.start >= 0 && s.drop > s.start) {
+      g.strokeStyle = css('--accent'); g.setLineDash([4, 3]); g.lineWidth = 1.2;
+      for (const j of [s.start, s.drop]) { g.beginPath(); g.moveTo(X(j), Tp); g.lineTo(X(j), h - B); g.stroke(); }
+      g.setLineDash([]);
+    }
+    $('shapeNote').textContent = r.liftMs ? `언락 → 드롭 ${r.liftMs.toFixed(2)} ms` : '드롭 소리 구분 불가';
+  }
+
+  function niceStep(x) { const p = Math.pow(10, Math.floor(Math.log10(x))); const m = x / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; }
+  function fmtNum(v) { return Math.abs(v) < 1e-9 ? '0' : (Math.abs(v) < 10 ? v.toFixed(1) : v.toFixed(0)); }
+
+  function render(r, isSample) {
+    if (r.raw == null) r.raw = r.rate;
+    r.rate = r.raw + (isSample ? 0 : (+$('cal').value || 0));
+    last = r; lastIsSample = isSample;
+    $('sampleTag').hidden = !isSample;
+    const expect = r.dur * r.bph / 3600;
+    const fold = r.mode === 'fold';
+    const shaky = fold ? (r.snr < 6 || r.sdMs > 2) : (r.used < expect * 0.5 || r.sdMs > 1.5);
+    $('rate').innerHTML = shaky ? `불안정<small>신호 약함</small>` : `${fmtRate(r.rate)}<small>초/일</small>`;
+    const chips = [];
+    const metas = r.rate >= 0 && r.rate <= 5, cosc = r.rate >= -4 && r.rate <= 6;
+    chips.push(`<span class="chip ${metas ? 'ok' : 'bad'}">METAS 0~+5 ${metas ? '이내' : '벗어남'}</span>`);
+    chips.push(`<span class="chip ${cosc ? 'ok' : 'bad'}">COSC −4~+6 ${cosc ? '이내' : '벗어남'}</span>`);
+    $('chips').innerHTML = shaky ? '' : chips.join('');
+    $('amp').textContent = r.amp ? Math.round(r.amp) + '°' : '—';
+    $('be').textContent = r.beatErr.toFixed(1) + ' ms';
+    $('bphOut').textContent = r.bph.toLocaleString('en-US');
+    $('ticksLbl').textContent = fold ? '신호 대 잡음비' : '사용한 틱';
+    $('ticks').textContent = fold ? r.snr.toFixed(0) : r.used;
+    $('traceLegend').innerHTML = fold
+      ? '<span><i class="dot" style="background:var(--tic)"></i>구간별 위치</span><span>위로 기울면 빠름</span>'
+      : '<span><i class="dot" style="background:var(--tic)"></i>짝수 틱</span><span><i class="dot" style="background:var(--toc)"></i>홀수 틱</span><span>위로 기울면 빠름</span>';
+    const q = [];
+    if (fold) {
+      q.push(`약한 신호 모드: ${r.dur.toFixed(0)}초 녹음을 ${r.segments}개 구간으로 나눠 박자 간격으로 겹쳐 계산했습니다.`);
+      if (shaky) q.push(`신호 대 잡음비가 ${r.snr.toFixed(1)}로 낮아(6 이상 필요) 결과를 믿기 어렵습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 옆면을 마이크 구멍에 바로 대고 더 조용한 곳에서 재 주세요.`);
+    } else q.push(`${r.dur.toFixed(0)}초 녹음에서 틱 ${r.detected}개를 찾아 ${r.used}개를 계산에 썼습니다.`);
+    if (shaky && !fold && !pro) q.push('케이스가 두꺼워 틱이 약한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.');
+    if (shaky && !fold) q.push(`예상 틱 ${Math.round(expect)}개 중 ${r.used}개만 일정하게 잡혔습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 뒷판을 폰 아래쪽 마이크 구멍에 바로 붙이고, 주변 소음을 줄여 주세요.`);
+    if (!fold && r.sdMs > 0.6) q.push('틱 간격이 고르지 않아 결과가 흔들릴 수 있습니다. 더 조용한 곳에서 다시 재 보세요.');
+    if (r.bph !== r.bphAuto) q.push(`소리로 추정한 bph는 ${r.bphAuto}입니다. 설정값을 확인하세요.`);
+    if (!r.amp) q.push('진폭은 계산하지 않았습니다. 평균 틱 파형에서 큰 소리(드롭) 앞의 작은 소리(언락)가 잡히지 않았거나, 계산값이 130~370° 범위를 벗어났습니다.');
+    if (r.beatErr > 1.0) q.push('비트 에러가 1 ms를 넘습니다. 여러 번 재서 같으면 점검 때 언급할 만합니다.');
+    $('quality').textContent = q.join(' ');
+    $('save').disabled = isSample;
+    drawTrace(r); drawShape(r);
+  }
+
+  const opts = () => ({ bph: $('bph').value, la: +$('la').value || 52, method: pro ? $('method').value : 'tick' });
+  $('method').addEventListener('change', () => {
+    if (!pro && $('method').value === 'fold') { $('method').value = 'auto'; upsell('약한 신호 모드는 프로 기능입니다.'); }
+  });
+  function setStatus(t, err) { const s = $('status'); s.textContent = t; s.classList.toggle('err', !!err); }
+
+  async function decode(file) {
+    const ab = await file.arrayBuffer();
+    const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    let buf;
+    try {
+      buf = await new AC(1, 1, 48000).decodeAudioData(ab);
+    } catch (e) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      const ctx = new C(); buf = await ctx.decodeAudioData(ab.slice ? ab : ab); ctx.close && ctx.close();
+    }
+    const n = buf.numberOfChannels, len = buf.length, x = new Float32Array(len);
+    for (let c = 0; c < n; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) x[i] += d[i] / n; }
+    return { x, sr: buf.sampleRate };
+  }
+
+  function fillWatches(sel) {
+    const s = $('watch'); s.innerHTML = '';
+    const add = (v, txt) => { const o = document.createElement('option'); o.value = v; o.textContent = txt; s.appendChild(o); };
+    add('', watches.length ? '선택 안 함' : '등록된 시계 없음');
+    watches.forEach(w => add(w.id, w.name));
+    add('__add', '＋ 새 시계 추가');
+    s.value = sel && (sel === '' || watches.some(w => w.id === sel)) ? sel : (watches[0] ? watches[0].id : '');
+    applyWatch();
+  }
+  function applyWatch() {
+    const w = curWatch();
+    $('wEdit').hidden = $('wDel').hidden = !w;
+    $('wDel').textContent = '삭제';
+    if (w) { $('bph').value = w.bph; $('la').value = w.la; }
+    try { localStorage.setItem('tg-cur-watch', $('watch').value); } catch (e) {}
+  }
+  function openForm(w) {
+    editing = w;
+    $('wFormTitle').textContent = w ? '시계 편집' : '새 시계 추가';
+    $('wName').value = w ? w.name : '';
+    $('wMov').value = w && w.mov ? w.mov : '';
+    $('wBph').value = w ? w.bph : 'auto';
+    $('wLa').value = w ? w.la : 52;
+    $('wForm').hidden = false; $('wName').focus();
+  }
+  $('wMov').addEventListener('change', () => {
+    const v = $('wMov').value; if (!v) return;
+    const [b, l] = v.split('|'); $('wBph').value = b; $('wLa').value = l;
+  });
+  $('watch').addEventListener('change', () => {
+    if ($('watch').value === '__add') {
+      $('watch').value = editing ? editing.id : (watches[0] ? watches[0].id : '');
+      if (!pro && watches.length >= FREE_WATCHES) { upsell(`무료 버전은 시계를 ${FREE_WATCHES}개까지 등록할 수 있습니다.`); applyWatch(); return; }
+      openForm(null); return;
+    }
+    applyWatch();
+  });
+  $('wEdit').addEventListener('click', () => { const w = curWatch(); if (w) openForm(w); });
+  let delArmed = false;
+  $('wDel').addEventListener('click', () => {
+    const w = curWatch(); if (!w) return;
+    if (!delArmed) { delArmed = true; $('wDel').textContent = '한 번 더 누르면 삭제'; setTimeout(() => { delArmed = false; $('wDel').textContent = '삭제'; }, 3000); return; }
+    delArmed = false; watches = watches.filter(x => x.id !== w.id); saveWatches(); fillWatches('');
+    setStatus(`'${w.name}'을(를) 목록에서 지웠습니다. 저장된 측정 기록은 남아 있습니다.`);
+  });
+  $('wCancel').addEventListener('click', () => { $('wForm').hidden = true; editing = null; });
+  $('wSave').addEventListener('click', () => {
+    const name = $('wName').value.trim();
+    if (!name) { $('wName').focus(); setStatus('시계 이름을 입력해 주세요.', true); return; }
+    const data = { name, mov: $('wMov').value, bph: $('wBph').value, la: Math.min(60, Math.max(38, +$('wLa').value || 52)) };
+    let id;
+    if (editing) { Object.assign(editing, data); id = editing.id; }
+    else { id = 'w' + Date.now(); watches.push(Object.assign({ id }, data)); }
+    saveWatches(); $('wForm').hidden = true; editing = null; fillWatches(id);
+    setStatus(`'${name}'을(를) 저장했습니다.`);
+  });
+
+  $('file').addEventListener('change', async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setStatus(`'${f.name}' 분석 중…`);
+    await new Promise(r => setTimeout(r, 30));
+    try {
+      const { x, sr } = await decode(f);
+      await new Promise(r => setTimeout(r, 0));
+      const r = TG.measure(x, sr, opts());
+      r.file = f.name;
+      render(r, false);
+      setStatus(`'${f.name}' 분석 완료`);
+    } catch (err) {
+      const known = err && err.message && /[가-힣]/.test(err.message);
+      setStatus(known ? err.message + weakHint() : '이 파일을 읽지 못했습니다. m4a, mp3, wav 녹음 파일로 다시 시도해 주세요.', true);
+    }
+    e.target.value = '';
+  });
+
+  // ---- log (per-browser) ----
+  const KEY = 'tg-log-v1';
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
+  const store = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch (e) { return false; } };
+  let log = load();
+
+  function renderLog() {
+    const tb = $('log').querySelector('tbody');
+    tb.innerHTML = '';
+    $('log').hidden = !log.length; $('logEmpty').hidden = !!log.length; $('clear').hidden = !log.length;
+    log.slice().reverse().forEach(e => {
+      const tr = document.createElement('tr');
+      const d = new Date(e.ts);
+      const cells = [
+        `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
+        e.watch, e.pos
+      ];
+      cells.forEach((c, i) => { const td = document.createElement('td'); td.className = ['c-date', 'c-watch', 'c-pos'][i]; td.textContent = c; tr.appendChild(td); });
+      [[fmtRate(e.rate) + ' s/d', 'c-rate'], [e.amp ? Math.round(e.amp) + '°' : '—', 'c-amp'], [e.be.toFixed(1) + ' ms', 'c-be']].forEach(([c, k]) => {
+        const td = document.createElement('td'); td.className = 'num ' + k; td.textContent = c; tr.appendChild(td);
+      });
+      const td = document.createElement('td'); td.className = 'c-del'; const b = document.createElement('button');
+      b.className = 'x'; b.type = 'button'; b.textContent = '삭제'; b.setAttribute('aria-label', '이 기록 삭제');
+      b.onclick = () => { log = log.filter(x => x.ts !== e.ts); store(log); renderLog(); };
+      td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
+    });
+    // averages per watch × position
+    const groups = {};
+    log.forEach(e => { const k = e.watch + '|' + e.pos; (groups[k] = groups[k] || []).push(e.rate); });
+    const keys = Object.keys(groups);
+    if (!keys.length) { $('summary').innerHTML = ''; return; }
+    if (!pro) { $('summary').innerHTML = `<p class="hint">자세별 평균과 무제한 기록은 프로 기능입니다. 무료 버전은 최근 ${FREE_LOGS}개까지 보관합니다.</p>`; return; }
+    const chips = keys.map(k => {
+      const v = groups[k], m = v.reduce((a, b) => a + b, 0) / v.length;
+      const [w, p] = k.split('|');
+      const s = document.createElement('span'); s.className = 'chip';
+      s.textContent = `${w} · ${p}: ${fmtRate(m)} s/d (${v.length}회)`;
+      return s.outerHTML;
+    });
+    $('summary').innerHTML = `<div class="chips">${chips.join('')}</div>`;
+  }
+
+  $('save').addEventListener('click', () => {
+    if (!last || lastIsSample) return;
+    log.push({ ts: Date.now(), watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, amp: last.amp, be: last.beatErr, bph: last.bph });
+    if (!pro && log.length > FREE_LOGS) log = log.slice(-FREE_LOGS);
+    const ok = store(log); renderLog();
+    $('save').disabled = true;
+    setStatus(ok ? '기록에 저장했습니다.' : '이 브라우저에서는 저장할 수 없어 이번 화면에서만 보입니다.', !ok);
+  });
+
+  let armed = false;
+  $('clear').addEventListener('click', () => {
+    if (!armed) { armed = true; $('clear').textContent = '한 번 더 누르면 삭제'; setTimeout(() => { armed = false; $('clear').textContent = '전체 삭제'; }, 3000); return; }
+    log = []; store(log); renderLog(); armed = false; $('clear').textContent = '전체 삭제';
+  });
+
+  $('proBuy').addEventListener('click', () => {
+    try { BILL.buy(); $('proMsg').textContent = '구글 결제 창을 여는 중…'; }
+    catch (e) { $('proMsg').textContent = '결제 창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
+  });
+  updateProUI();
+  try { if (BILL) BILL.refresh(); } catch (e) {}
+  let savedSel = ''; try { savedSel = localStorage.getItem('tg-cur-watch') || ''; } catch (e) {}
+  fillWatches(savedSel);
+  if (!watches.length) setStatus('먼저 ＋ 새 시계 추가로 내 시계를 등록하면 bph가 자동으로 맞춰지고, 기록이 시계별로 정리됩니다.');
+  try { const c = localStorage.getItem('tg-cal'); if (c !== null) $('cal').value = c; } catch (e) {}
+  $('cal').addEventListener('change', () => {
+    try { localStorage.setItem('tg-cal', $('cal').value); } catch (e) {}
+    if (last && !lastIsSample) { const keepSave = $('save').disabled; render(last, false); $('save').disabled = keepSave; }
+  });
+
+  // ---- live microphone (Android app build only) ----
+  const APP = !!window.__APP__ && (!!window.AndroidRec || !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
+  let live = null;
+  const LIVE_MAX = 60;
+  function stopLive(final) {
+    if (!live) return;
+    const L = live;
+    live = null;
+    clearInterval(L.timer);
+    if (L.native) {
+      try { window.AndroidRec.stop(); } catch (e) {}
+      window.__recData = null;
+    } else {
+      try { L.sp.disconnect(); L.src.disconnect(); } catch (e) {}
+      L.stream.getTracks().forEach(t => t.stop());
+      try { L.ac.close(); } catch (e) {}
+    }
+    $('liveBtn').textContent = '실시간 측정 시작';
+    $('pick').classList.remove('disabled');
+    if (final) {
+      try {
+        const r = TG.measure(L.buf.subarray(0, L.len), L.sr, opts());
+        render(r, false);
+        setStatus(`측정 완료 · ${(L.len / L.sr).toFixed(0)}초 전체로 계산했습니다.`);
+      } catch (err) { setStatus(err.message + weakHint(), true); $('save').disabled = true; }
+    } else setStatus('측정을 멈췄습니다.');
+  }
+  // native Android recorder: raw PCM straight from the mic at the ADC's own clock
+  function startNative() {
+    let sr = -2;
+    try { sr = window.AndroidRec.start(); } catch (e) {}
+    if (sr === -1) { setStatus('마이크 권한을 허용한 뒤 다시 눌러 주세요.', true); return; }
+    if (!(sr > 0)) { setStatus('마이크를 열지 못했습니다. 통화나 녹음 중인 다른 앱이 있는지 확인해 주세요.', true); return; }
+    const L = { native: true, sr, buf: new Float32Array(Math.ceil(sr * LIVE_MAX) + 8192), len: 0, gaps: 0, mode: 'native' };
+    window.__recData = b64 => {
+      if (live !== L) return;
+      const s = atob(b64), n = s.length >> 1;
+      const m = Math.min(n, L.buf.length - L.len);
+      for (let i = 0; i < m; i++) {
+        let v = s.charCodeAt(2 * i) | (s.charCodeAt(2 * i + 1) << 8);
+        if (v >= 32768) v -= 65536;
+        L.buf[L.len + i] = v / 32768;
+      }
+      L.len += m;
+    };
+    beginLive(L);
+  }
+  function beginLive(L) {
+    const sr = L.sr;
+    live = L;
+    $('save').disabled = true;
+    $('liveBtn').textContent = '측정 멈추기';
+    setStatus('측정 중 0초 · 시계를 마이크에 대고 움직이지 마세요.');
+    L.timer = setInterval(() => {
+      if (live !== L) return;
+      const sec = L.len / sr;
+      if (sec >= LIVE_MAX) { stopLive(true); return; }
+      if (sec < 15) { setStatus(`측정 중 ${sec.toFixed(0)}초 · 15초부터 결과가 나옵니다.`); return; }
+      if (performance.now() < (L.next || 0)) { setStatus(`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초`); return; }
+      try {
+        const t0 = performance.now();
+        const r = TG.measure(L.buf.subarray(0, L.len), sr, opts());
+        L.next = performance.now() + Math.max(0, 3 * (performance.now() - t0));
+        render(r, false); $('save').disabled = true;
+        setStatus(`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초 · ${r.mode === 'fold' ? '약한 신호' : '개별 틱'} · ${L.mode === 'native' ? 'N' : L.mode === 'worklet' ? 'A' : 'S'}${sr / 1000}k${L.gaps ? ' · 끊김 ' + L.gaps : ''}`);
+      } catch (err) { setStatus(`측정 중 ${sec.toFixed(0)}초 · ${err.message}`); }
+    }, 1000);
+  }
+  async function startLive() {
+    if (window.AndroidRec) { startNative(); return; }
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
+    } catch (e) {
+      setStatus('마이크를 쓸 수 없습니다. 휴대폰 설정 > 애플리케이션 > 타임그래퍼 > 권한에서 마이크를 허용해 주세요.', true);
+      return;
+    }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ac = new AC();
+    if (ac.state === 'suspended') await ac.resume();
+    const src = ac.createMediaStreamSource(stream);
+    const sr = ac.sampleRate;
+    const L = { stream, ac, src, sp: null, sr, buf: new Float32Array(Math.ceil(sr * LIVE_MAX) + 8192), len: 0, f0: null, gaps: 0 };
+    // write a chunk at its true frame position; any gap is zero-filled so time never compresses
+    const put = (frame, d) => {
+      if (live !== L) return;
+      if (L.f0 === null) L.f0 = frame;
+      const pos = frame - L.f0;
+      if (pos > L.len + 1) L.gaps++;
+      if (pos < 0 || pos >= L.buf.length) return;
+      const n = Math.min(d.length, L.buf.length - pos);
+      L.buf.set(d.subarray(0, n), pos);
+      L.len = Math.max(L.len, pos + n);
+    };
+    let worklet = false;
+    if (ac.audioWorklet && window.AudioWorkletNode) {
+      try {
+        const code = `class Cap extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(2048);this.n=0;this.f=0}
+          process(inp){const ch=inp[0]&&inp[0][0];const len=ch?ch.length:128;if(this.n===0)this.f=currentFrame;
+          if(ch)this.b.set(ch,this.n);else this.b.fill(0,this.n,this.n+len);this.n+=len;
+          if(this.n+128>this.b.length){this.port.postMessage({f:this.f,d:this.b.slice(0,this.n)});this.n=0}return true}}
+          registerProcessor('cap',Cap);`;
+        const url = URL.createObjectURL(new Blob([code], { type: 'application/javascript' }));
+        await ac.audioWorklet.addModule(url);
+        const node = new AudioWorkletNode(ac, 'cap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1 });
+        node.port.onmessage = e => put(e.data.f, e.data.d);
+        const mute = ac.createGain(); mute.gain.value = 0;
+        src.connect(node); node.connect(mute); mute.connect(ac.destination);
+        L.sp = node; worklet = true;
+      } catch (e) { worklet = false; }
+    }
+    if (!worklet) {
+      const sp = ac.createScriptProcessor(4096, 1, 1);
+      sp.onaudioprocess = e => put(Math.round(e.playbackTime * sr), e.inputBuffer.getChannelData(0));
+      src.connect(sp); sp.connect(ac.destination);
+      L.sp = sp;
+    }
+    L.mode = worklet ? 'worklet' : 'script';
+    beginLive(L);
+  }
+  if (APP) {
+    $('liveBtn').hidden = false;
+    $('pick').classList.remove('primary');
+    $('log-h').textContent = '측정 기록 · 이 휴대폰에만 저장';
+    $('liveBtn').addEventListener('click', () => live ? stopLive(true) : startLive());
+    document.addEventListener('visibilitychange', () => { if (document.hidden && live) stopLive(false); });
+  }
+
+  // ---- sample state ----
+  const s = TG.synth({ bph: 28800, rate: 3.2, be: 0.4, amp: 285, la: 52, dur: 30 });
+  render(TG.analyze(s.x, s.sr, { bph: 'auto', la: 52 }), true);
+  renderLog();
+
+  const redraw = () => last && (drawTrace(last), drawShape(last));
+  window.addEventListener('resize', redraw);
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw); } catch (e) {}
+  new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
+</body></html>
