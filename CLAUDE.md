@@ -10,7 +10,7 @@
   - 화면 로직: 시계 목록, 측정, 기록, 프로 잠금
 - `MainActivity.java`: WebView, `https://appassets.androidplatform.net/` 로 assets 제공, 마이크 권한, 파일 선택, edge-to-edge 여백
 - `NativeRec.java`: AudioRecord로 48 kHz PCM 원음 수집 → 100 ms마다 base64로 `window.__recData()` 호출 (JS 이름 `AndroidRec`)
-  - 소스 우선순위: UNPROCESSED(9) → VOICE_RECOGNITION(6) → MIC(1)
+  - 소스 우선순위: UNPROCESSED(9) → VOICE_RECOGNITION(6) → MIC(1). 입력 장치는 내장 마이크로 고정(`setPreferredDevice`) — 갤럭시 버즈 연결 시 이어폰 마이크로 녹음돼 틱을 못 찾던 문제(2026-11-24)
   - 웹 오디오(getUserMedia) 경로는 입력/출력 클럭 불일치로 샘플이 늘거나 줄어 오차가 수천 s/d로 튀었음 → 네이티브 녹음으로 해결
 - `Billing.java`: Play Billing Library 8.0.0, 일회성 상품 `pro_unlock` (JS 이름 `AndroidBilling`: `isPro()`, `price()`, `refresh()`, `buy()` → 결과는 `window.__billing({pro, price, msg, err})`)
 

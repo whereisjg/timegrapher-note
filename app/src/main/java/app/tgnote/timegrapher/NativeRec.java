@@ -1,8 +1,11 @@
 package app.tgnote.timegrapher;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
@@ -36,7 +39,7 @@ public class NativeRec {
         for (int src : sources) {
             try {
                 AudioRecord r = new AudioRecord(src, sr, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, size);
-                if (r.getState() == AudioRecord.STATE_INITIALIZED) { rec = r; break; }
+                if (r.getState() == AudioRecord.STATE_INITIALIZED) { preferBuiltInMic(r); rec = r; break; }
                 r.release();
             } catch (Exception e) { /* try next source */ }
         }
@@ -59,6 +62,16 @@ public class NativeRec {
         th.setPriority(Thread.MAX_PRIORITY);
         th.start();
         return sr;
+    }
+
+    /** Bluetooth earbuds would otherwise take over the input; the watch sits on the phone's own mic. */
+    private void preferBuiltInMic(AudioRecord r) {
+        try {
+            AudioManager am = (AudioManager) act.getSystemService(Context.AUDIO_SERVICE);
+            for (AudioDeviceInfo d : am.getDevices(AudioManager.GET_DEVICES_INPUTS)) {
+                if (d.getType() == AudioDeviceInfo.TYPE_BUILTIN_MIC) { r.setPreferredDevice(d); return; }
+            }
+        } catch (Exception e) { /* keep the system default */ }
     }
 
     @JavascriptInterface
