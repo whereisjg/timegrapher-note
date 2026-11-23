@@ -976,7 +976,8 @@ const TG = (() => {
     const tb = $('log').querySelector('tbody');
     tb.innerHTML = '';
     $('log').hidden = !log.length; $('logEmpty').hidden = !!log.length; $('clear').hidden = !log.length;
-    log.slice().reverse().forEach(e => {
+    // free: every record is kept, only the latest few are shown (an upgrade brings the rest back)
+    (pro ? log : log.slice(-FREE_LOGS)).slice().reverse().forEach(e => {
       const tr = document.createElement('tr');
       const d = new Date(e.ts);
       const cells = [
@@ -997,7 +998,7 @@ const TG = (() => {
     log.forEach(e => { const k = e.watch + '|' + e.pos; (groups[k] = groups[k] || []).push(e.rate); });
     const keys = Object.keys(groups);
     if (!keys.length) { $('summary').innerHTML = ''; return; }
-    if (!pro) { $('summary').innerHTML = `<p class="hint">자세별 평균과 무제한 기록은 프로 기능입니다. 무료 버전은 최근 ${FREE_LOGS}개까지 보관합니다.</p>`; return; }
+    if (!pro) { $('summary').innerHTML = `<p class="hint">자세별 평균과 무제한 기록은 프로 기능입니다. 무료 버전은 최근 ${FREE_LOGS}개만 보여 줍니다${log.length > FREE_LOGS ? ` (저장된 기록 ${log.length}개, 프로로 바꾸면 모두 보임)` : ''}.</p>`; return; }
     const chips = keys.map(k => {
       const v = groups[k], m = v.reduce((a, b) => a + b, 0) / v.length;
       const [w, p] = k.split('|');
@@ -1011,7 +1012,6 @@ const TG = (() => {
   $('save').addEventListener('click', () => {
     if (!last || lastIsSample) return;
     log.push({ ts: Date.now(), watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, amp: last.amp, be: last.beatErr, bph: last.bph });
-    if (!pro && log.length > FREE_LOGS) log = log.slice(-FREE_LOGS);
     const ok = store(log); renderLog();
     $('save').disabled = true;
     setStatus(ok ? '기록에 저장했습니다.' : '이 브라우저에서는 저장할 수 없어 이번 화면에서만 보입니다.', !ok);
@@ -1069,7 +1069,7 @@ const TG = (() => {
   function startNative() {
     let sr = -2;
     try { sr = window.AndroidRec.start(); } catch (e) {}
-    if (sr === -1) { setStatus('마이크 권한을 허용한 뒤 다시 눌러 주세요.', true); return; }
+    if (sr === -1) { setStatus('마이크 권한을 허용한 뒤 다시 눌러 주세요. 허용 창이 뜨지 않으면 휴대폰 설정 > 애플리케이션 > 타임그래퍼 노트 > 권한에서 마이크를 허용해 주세요.', true); return; }
     if (!(sr > 0)) { setStatus('마이크를 열지 못했습니다. 통화나 녹음 중인 다른 앱이 있는지 확인해 주세요.', true); return; }
     const L = { native: true, sr, buf: new Float32Array(Math.ceil(sr * LIVE_MAX) + 8192), len: 0, gaps: 0, mode: 'native' };
     window.__recData = b64 => {
@@ -1095,6 +1095,13 @@ const TG = (() => {
       if (live !== L) return;
       const sec = L.len / sr;
       if (sec >= LIVE_MAX) { stopLive(true); return; }
+      // no audio for 3 s: the mic was taken (call, another app) or recording stopped underneath us
+      if (L.len !== L.seen) { L.seen = L.len; L.stall = 0; }
+      else if (++L.stall >= 3) {
+        if (sec >= 15) { stopLive(true); setStatus($('status').textContent + ' 마이크 입력이 끊겨 여기서 멈췄습니다.', $('status').classList.contains('err')); }
+        else { stopLive(false); setStatus('마이크 입력이 끊겼습니다. 통화 중이거나 다른 앱이 마이크를 쓰고 있는지 확인한 뒤 다시 시작해 주세요.', true); }
+        return;
+      }
       if (sec < 15) { setStatus(`측정 중 ${sec.toFixed(0)}초 · 15초부터 결과가 나옵니다.`); return; }
       if (performance.now() < (L.next || 0)) { setStatus(`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초`); return; }
       try {

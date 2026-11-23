@@ -48,7 +48,8 @@ public class NativeRec {
             short[] buf = new short[sr / 10];
             while (running) {
                 int n = r.read(buf, 0, buf.length);
-                if (n <= 0) continue;
+                if (n < 0) break;  // mic lost (e.g. a call took it): stop instead of spinning; the page notices the silence
+                if (n == 0) continue;
                 ByteBuffer bb = ByteBuffer.allocate(n * 2).order(ByteOrder.LITTLE_ENDIAN);
                 bb.asShortBuffer().put(buf, 0, n);
                 final String js = "window.__recData&&window.__recData('" + Base64.encodeToString(bb.array(), Base64.NO_WRAP) + "')";
