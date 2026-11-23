@@ -1,6 +1,7 @@
 package app.tgnote.timegrapher;
 
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import com.android.billingclient.api.AcknowledgePurchaseParams;
@@ -31,11 +32,14 @@ public class Billing implements PurchasesUpdatedListener {
     private final SharedPreferences prefs;
     private final BillingClient client;
     private volatile ProductDetails details;
+    // test builds from Android Studio (Run) unlock pro; the signed release bundle is never debuggable
+    private final boolean debug;
 
     Billing(MainActivity act, WebView web) {
         this.act = act;
         this.web = web;
         this.prefs = act.getSharedPreferences("billing", 0);
+        this.debug = (act.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         this.client = BillingClient.newBuilder(act)
                 .setListener(this)
                 .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
@@ -61,7 +65,7 @@ public class Billing implements PurchasesUpdatedListener {
 
     @JavascriptInterface
     public boolean isPro() {
-        return prefs.getBoolean("pro", false);
+        return debug || prefs.getBoolean("pro", false);
     }
 
     @JavascriptInterface
@@ -172,7 +176,7 @@ public class Billing implements PurchasesUpdatedListener {
 
     private void setPro(boolean v, String msg) {
         prefs.edit().putBoolean("pro", v).apply();
-        push(v, msg, false);
+        push(v || debug, msg, false);
     }
 
     private void push(Boolean pro, String msg, boolean err) {
