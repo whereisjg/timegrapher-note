@@ -1487,34 +1487,66 @@ const TG = (() => {
     };
     beginLive(L);
   }
-  // one ripple per tick heard: finds sharp clicks in the new samples and replays them ~0.1 s later, keeping the rhythm
+  // one ripple per tick heard, locked to the watch's beat: once the beat period is known (watch bph, or guessed from
+  // the sound), only the loudest click near each expected beat counts, so noise between ticks never ripples and the
+  // ripples keep the watch's own steady rhythm (~0.2 s behind the sound)
   const calmUI = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function tickPulse(L, from, to) {
     if (calmUI || $('mMic').hidden) return;
-    const blk = Math.round(L.sr / 500), gap = Math.round(L.sr * 0.06);
-    const P = L.pulse || (L.pulse = { noise: 0, last: -1e9, prev: 0, y: 0 });
-    const k = Math.exp(-2 * Math.PI * 500 / L.sr);   // one-pole high-pass ~500 Hz: drops hum, keeps dull ticks
+    const sr = L.sr, blk = Math.round(sr / 500), keep = 1250;   // 2 ms blocks, last 2.5 s
+    let P = L.pulse;
+    if (!P || from > P.pos + blk) P = L.pulse = { noise: 0, peak: 0, prev: 0, y: 0, pos: from, h0: from, hv: [], next: null, miss: 0, per: 0, perAt: 0 };
+    const k = Math.exp(-2 * Math.PI * 500 / sr);   // one-pole high-pass ~500 Hz: drops hum, keeps dull ticks
     const v = [];
-    for (let a = from; a + blk <= to; a += blk) {
+    for (; P.pos + blk <= to; P.pos += blk) {
       let m = 0;
-      for (let i = a; i < a + blk; i++) { P.y = k * (P.y + L.buf[i] - P.prev); P.prev = L.buf[i]; const d = Math.abs(P.y); if (d > m) m = d; }
-      v.push(m);
+      for (let i = P.pos; i < P.pos + blk; i++) { P.y = k * (P.y + L.buf[i] - P.prev); P.prev = L.buf[i]; const d = Math.abs(P.y); if (d > m) m = d; }
+      v.push(m); P.hv.push(m);
     }
+    if (P.hv.length > keep) { const d = P.hv.length - keep; P.hv.splice(0, d); P.h0 += d * blk; }
     // noise floor = median block of each chunk (ticks fill only a few blocks); silent start-up chunks are skipped
     const med = v.slice().sort((x, y) => x - y)[v.length >> 1] || 0;
     if (med > 0) P.noise = P.noise ? P.noise * 0.8 + med * 0.2 : med;
-    if (!P.noise) return;
-    // ticks differ by watch (a soft, dull tick stays a few times above the floor): follow the loudest recent click,
-    // decaying ~1 s, and call anything above a third of it a tick, as long as it stands 4x above the noise
-    P.peak = Math.max(Math.max(...v, 0), (P.peak || 0) * 0.9);
-    const th = Math.max(2.5 * P.noise, 0.35 * P.peak);
-    v.forEach((m, k) => {
-      const a = from + k * blk;
-      if (m > th && a - P.last > gap) {
-        P.last = a;
-        setTimeout(ripple, Math.max(0, 100 - (to - a) / L.sr * 1000));
-      }
-    });
+    if (!P.noise || !v.length) return;
+    P.peak = Math.max(Math.max(...v), P.peak * 0.9);
+    const fixed = +$('bph').value;
+    if (fixed) P.per = sr * 3600 / fixed;
+    else if (P.hv.length >= 750 && P.pos - P.perAt > sr) { P.perAt = P.pos; P.per = guessPer(P.hv, P.noise, blk, sr); }
+    if (!P.per) return;
+    const per = P.per, win = 0.2 * per, th = Math.max(2.5 * P.noise, 0.3 * P.peak), end = P.pos;
+    const loudest = (s, e) => {
+      let b = -1, bm = 0;
+      for (let i = Math.max(0, Math.floor((s - P.h0) / blk)), n = Math.min(P.hv.length, Math.ceil((e - P.h0) / blk)); i < n; i++) if (P.hv[i] > bm) { bm = P.hv[i]; b = i; }
+      return { m: bm, at: P.h0 + b * blk };
+    };
+    if (P.next == null) {
+      const r = loudest(end - per, end);
+      if (r.m <= th) return;
+      P.next = r.at + per; P.miss = 0;
+    }
+    while (P.next + win <= end) {
+      const r = loudest(P.next - win, P.next + win);
+      let at;
+      if (r.m > th) { at = r.at; P.miss = 0; }
+      else if (++P.miss <= 2) at = P.next;   // a missed tick or two: keep the beat going
+      else { P.next = null; break; }
+      setTimeout(ripple, Math.max(0, 200 - (end - at) / sr * 1000));
+      P.next = at + per;
+    }
+  }
+  // beat period from the sound: which standard bph makes clicks line up one beat apart (the fastest that fits well,
+  // so a 36,000 watch is not read as 18,000)
+  function guessPer(hv, noise, blk, sr) {
+    const x = hv.map(m => Math.max(0, m - 2 * noise));
+    let best = 0; const sc = [];
+    for (const b of [36000, 28800, 25200, 21600, 19800, 18000]) {
+      const lag = sr * 3600 / b / blk, l = Math.round(lag); let s = 0;
+      for (let i = 0; i + l + 1 < x.length; i++) if (x[i]) s += x[i] * Math.max(x[i + l - 1], x[i + l], x[i + l + 1]);
+      sc.push([b, s]); best = Math.max(best, s);
+    }
+    if (!best) return 0;
+    const pick = sc.find(([, s]) => s >= 0.85 * best);
+    return sr * 3600 / pick[0];
   }
   function ripple() {
     const m = $('mMic'); if (m.hidden || m.children.length > 12) return;
