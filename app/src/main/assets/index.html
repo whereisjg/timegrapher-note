@@ -162,6 +162,13 @@ h1 .chip, h1 .chip.ok{vertical-align:middle;font-family:var(--f-body);font-size:
 .sheet{margin:auto;width:100%;max-width:420px;display:grid;gap:14px;text-align:center}
 .sheet .mwatch{font-family:var(--f-serif);font-size:1.15rem}
 .sheet #mGauge{width:100%;max-width:340px;margin:0 auto -6px;display:block}
+.mic{position:fixed;bottom:0;left:50%;width:0;height:0;pointer-events:none;z-index:21}
+.mic i{position:absolute;left:-90px;top:-90px;width:180px;height:180px;border-radius:50%;border:2px solid var(--gold);
+  opacity:0;animation:ripple 2.4s ease-out infinite}
+.mic i:nth-child(2){animation-delay:.8s}.mic i:nth-child(3){animation-delay:1.6s}
+.mic b{position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:var(--gold)}
+@keyframes ripple{0%{transform:scale(.08);opacity:.9}100%{transform:scale(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mic i{animation:none;opacity:.35;transform:scale(.5)}}
 .prog{height:2px;background:var(--line);margin:4px 0}
 .prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .9s linear}
 .mstats{display:flex;justify-content:center;gap:22px;color:var(--muted);font-size:.9rem}
@@ -348,6 +355,7 @@ body.modal{overflow:hidden}
 </div>
 
 <div class="overlay" id="mOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="mic" id="mMic" hidden aria-hidden="true"><i></i><i></i><i></i><b></b></div>
   <div class="sheet">
     <div class="label" id="mTitle">실시간 측정</div>
     <div class="mwatch" id="mWatch"></div>
@@ -1418,13 +1426,14 @@ const TG = (() => {
     drawGauge(0, 'none', 'mGauge');
     $('mStop').hidden = false; $('mSave').hidden = $('mWav').hidden = $('mClose').hidden = $('mRetry').hidden = true;
     $('mOverlay').hidden = false; document.body.classList.add('modal'); sheetNative(true);
+    $('mMic').hidden = false;
   }
   function closeSheet() { $('mOverlay').hidden = true; document.body.classList.remove('modal'); sheetNative(false); }
   function sheetNative(open) { try { if (window.AndroidRec && window.AndroidRec.sheet) window.AndroidRec.sheet(open); } catch (e) {} }
   // Android Back while the sheet is up: cancels a running measurement (no result) and closes the sheet
   window.__back = () => { if (live) stopLive(false); if (!$('mOverlay').hidden) closeSheet(); };
   function sheetDone(ok) {
-    $('mStop').hidden = true; $('mClose').hidden = $('mRetry').hidden = false;
+    $('mMic').hidden = true; $('mStop').hidden = true; $('mClose').hidden = $('mRetry').hidden = false;
     $('mSave').hidden = !ok || $('save').disabled; $('mSave').disabled = false;
     $('mWav').hidden = !ok || $('wav').hidden;
     $('mBar').style.width = '100%';
