@@ -1111,7 +1111,7 @@ const TG = (() => {
       $('mAmp').textContent = $('amp').textContent; $('mBe').textContent = $('be').textContent;
     }
     $('amp').textContent = r.amp ? Math.round(r.amp) + '°' : '—';
-    $('be').textContent = r.beatErr.toFixed(1) + ' ms';
+    $('be').textContent = r.beatErr.toFixed(2) + ' ms';
     $('bphOut').textContent = fmtInt(r.bph);
     $('ticksLbl').textContent = fold || tpl ? TX`신호 대 잡음비` : TX`사용한 틱`;
     $('ticks').textContent = fold || tpl ? r.snr.toFixed(0) : r.used;
@@ -1294,7 +1294,7 @@ const TG = (() => {
         const now = el('div', 'now', fmtRate(lastR.rate));
         now.appendChild(el('small', null, TX`${lastR.rateErr ? '± ' + lastR.rateErr.toFixed(2) + ' ' : ''}초/일 · ${pname(lastR.pos)}`));
         c.appendChild(now);
-        c.appendChild(el('div', 'sub', TX`최근 ${fmtDate(lastR.ts)} · 진폭 ${lastR.amp ? Math.round(lastR.amp) + '°' : '—'} · 비트 에러 ${lastR.be.toFixed(1)} ms · 기록 ${recs.length}회`));
+        c.appendChild(el('div', 'sub', TX`최근 ${fmtDate(lastR.ts)} · 진폭 ${lastR.amp ? Math.round(lastR.amp) + '°' : '—'} · 비트 에러 ${lastR.be.toFixed(2)} ms · 기록 ${recs.length}회`));
         if (pro) {
           const byPos = {};
           recs.forEach(e => (byPos[e.pos] = byPos[e.pos] || []).push(e.rate));
@@ -1339,7 +1339,7 @@ const TG = (() => {
         wname(e.watch), pname(e.pos)
       ];
       cells.forEach((c, i) => { const td = document.createElement('td'); td.className = ['c-date', 'c-watch', 'c-pos'][i]; td.textContent = c; tr.appendChild(td); });
-      [[fmtRate(e.rate) + ' s/d', 'c-rate'], [e.amp ? Math.round(e.amp) + '°' : '—', 'c-amp'], [e.be.toFixed(1) + ' ms', 'c-be']].forEach(([c, k]) => {
+      [[fmtRate(e.rate) + ' s/d', 'c-rate'], [e.amp ? Math.round(e.amp) + '°' : '—', 'c-amp'], [e.be.toFixed(2) + ' ms', 'c-be']].forEach(([c, k]) => {
         const td = document.createElement('td'); td.className = 'num ' + k; td.textContent = c; tr.appendChild(td);
       });
       const td = document.createElement('td'); td.className = 'c-del'; const b = document.createElement('button');
