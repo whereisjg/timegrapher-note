@@ -1420,8 +1420,8 @@ const TG = (() => {
   }
   function closeSheet() { $('mOverlay').hidden = true; document.body.classList.remove('modal'); sheetNative(false); }
   function sheetNative(open) { try { if (window.AndroidRec && window.AndroidRec.sheet) window.AndroidRec.sheet(open); } catch (e) {} }
-  // Android Back while the sheet is up: first stops a running measurement, then closes the sheet
-  window.__back = () => { if (live) stopLive(true); else if (!$('mOverlay').hidden) closeSheet(); };
+  // Android Back while the sheet is up: cancels a running measurement (no result) and closes the sheet
+  window.__back = () => { if (live) stopLive(false); if (!$('mOverlay').hidden) closeSheet(); };
   function sheetDone(ok) {
     $('mStop').hidden = true; $('mClose').hidden = false;
     $('mSave').hidden = !ok || $('save').disabled; $('mSave').disabled = false;
