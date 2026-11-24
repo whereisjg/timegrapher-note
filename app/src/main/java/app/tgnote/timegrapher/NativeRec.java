@@ -89,6 +89,14 @@ public class NativeRec {
         } catch (Exception e) { /* keep the system default */ }
     }
 
+    /** Page hands over a finished recording (WAV, base64); the user picks where it goes. */
+    @JavascriptInterface
+    public void saveWav(String b64, final String name) {
+        final byte[] data;
+        try { data = Base64.decode(b64, Base64.DEFAULT); } catch (Exception e) { return; }
+        act.runOnUiThread(new Runnable() { public void run() { act.createFile(data, name, "audio/wav"); } });
+    }
+
     @JavascriptInterface
     public synchronized void stop() {
         running = false;

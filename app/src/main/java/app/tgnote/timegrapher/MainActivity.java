@@ -24,6 +24,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class MainActivity extends Activity {
     private static final String HOST = "appassets.androidplatform.net";
@@ -33,6 +34,7 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCb;
     private NativeRec rec;
     private Billing billing;
+    private byte[] pendingFile;   // waiting for the user to pick where to save it
 
     @Override
     protected void onCreate(Bundle b) {
@@ -158,8 +160,41 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Lets the user choose where to save a file (no storage permission needed). */
+    void createFile(byte[] bytes, String name, String mime) {
+        pendingFile = bytes;
+        Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        i.addCategory(Intent.CATEGORY_OPENABLE);
+        i.setType(mime);
+        i.putExtra(Intent.EXTRA_TITLE, name);
+        try {
+            startActivityForResult(i, 4);
+        } catch (Exception e) {
+            pendingFile = null;
+            fileSaved("fail");
+        }
+    }
+
+    private void fileSaved(String state) {
+        web.evaluateJavascript("window.__fileSaved&&window.__fileSaved('" + state + "')", null);
+    }
+
     @Override
     protected void onActivityResult(int code, int result, Intent data) {
+        if (code == 4) {
+            String state = "cancel";
+            if (result == RESULT_OK && data != null && data.getData() != null && pendingFile != null) {
+                try (OutputStream o = getContentResolver().openOutputStream(data.getData())) {
+                    o.write(pendingFile);
+                    state = "ok";
+                } catch (Exception e) {
+                    state = "fail";
+                }
+            }
+            pendingFile = null;
+            fileSaved(state);
+            return;
+        }
         if (code == 2 && fileCb != null) {
             Uri[] r = null;
             if (result == RESULT_OK && data != null && data.getData() != null) r = new Uri[]{data.getData()};

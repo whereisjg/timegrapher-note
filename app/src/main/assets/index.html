@@ -91,7 +91,7 @@ details summary{cursor:pointer;font-weight:600}
 .prolist{margin:0;padding-left:1.1em;display:grid;gap:3px;font-size:.88rem}
 h1 .chip{vertical-align:middle;font-size:.7rem}
 .addbox{display:grid;gap:12px;padding:14px;border:1px dashed var(--accent);border-radius:8px}
-input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
 .mini{display:flex;gap:4px}
 .link{background:none;border:none;color:var(--accent);font:inherit;font-size:.85rem;cursor:pointer;padding:2px 4px}
 .lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
@@ -149,6 +149,7 @@ input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px s
           <div class="field"><label for="wLa">리프트 앵글 (°)</label><input id="wLa" type="number" min="38" max="60" step="1" value="52"></div>
         </div>
         <p class="hint">bph와 리프트 앵글은 시계 설명서나 무브먼트 사양에 나옵니다. 모르면 비워 두세요. bph는 소리로 추정하고, 리프트 앵글은 일반값 52°를 씁니다. '미공개'는 제조사가 리프트 앵글을 밝히지 않은 무브먼트라 52°로 채웁니다(진폭에만 영향).</p>
+        <div class="field"><label for="wStamp">스탬핑 날짜 (보증서에 찍힌 구입일)</label><input id="wStamp" type="date"></div>
         <div class="two"><button class="btn" id="wCancel" type="button">취소</button><button class="btn primary" id="wSave" type="button">저장</button></div>
       </div>
       <div class="field">
@@ -247,7 +248,7 @@ input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px s
       </div>
       <div class="row">
         <p class="hint">오차 옆의 ±는 이번 측정의 계산 오차입니다. 자세나 태엽 상태가 바뀌면 시계의 실제 오차가 하루 몇 초씩 달라지므로, 하루 평균을 알려면 여러 자세에서 재 보세요. 진폭은 휴대폰 마이크 특성상 ±20° 정도 오차가 있는 참고값입니다.</p>
-        <button class="btn" id="save" type="button" disabled>기록에 저장</button>
+        <span class="mini"><button class="btn" id="wav" type="button" hidden>녹음 파일 저장</button><button class="btn" id="save" type="button" disabled>기록에 저장</button></span>
       </div>
     </section>
   </div>
@@ -1028,6 +1029,7 @@ const TG = (() => {
     $('wMov').value = w && w.mov ? w.mov : '';
     $('wBph').value = w ? w.bph : 'auto';
     $('wLa').value = w ? w.la : 52;
+    $('wStamp').value = w && w.stamp ? w.stamp : '';
     $('wForm').hidden = false; $('wName').focus();
   }
   $('wMov').addEventListener('change', () => {
@@ -1060,7 +1062,7 @@ const TG = (() => {
   $('wSave').addEventListener('click', () => {
     const name = $('wName').value.trim();
     if (!name) { $('wName').focus(); setStatus('시계 이름을 입력해 주세요.', true); return; }
-    const data = { name, mov: $('wMov').value, bph: $('wBph').value, la: Math.min(60, Math.max(38, +$('wLa').value || 52)) };
+    const data = { name, mov: $('wMov').value, bph: $('wBph').value, la: Math.min(60, Math.max(38, +$('wLa').value || 52)), stamp: $('wStamp').value || '' };
     let id;
     if (editing) {
       id = editing.id;
@@ -1116,6 +1118,12 @@ const TG = (() => {
       c.appendChild(el('h3', null, w.name));
       const mv = movName(w.mov);
       c.appendChild(el('div', 'sub', `${mv ? mv + ' · ' : ''}${w.bph === 'auto' ? 'bph 자동' : (+w.bph).toLocaleString('en-US') + ' bph'} · 리프트 앵글 ${w.la}°`));
+      if (w.stamp) {
+        const sd = new Date(w.stamp + 'T00:00:00'), now = new Date();
+        let mo = (now.getFullYear() - sd.getFullYear()) * 12 + now.getMonth() - sd.getMonth() - (now.getDate() < sd.getDate() ? 1 : 0);
+        const age = mo < 0 ? '' : mo < 12 ? ` · ${mo}개월째` : ` · ${Math.floor(mo / 12)}년${mo % 12 ? ' ' + (mo % 12) + '개월' : ''}째`;
+        c.appendChild(el('div', 'sub', `스탬핑 ${w.stamp.replace(/-/g, '.')}${age}`));
+      }
       const lastR = recs[recs.length - 1];
       if (lastR) {
         const now = el('div', 'now', fmtRate(lastR.rate));
@@ -1226,6 +1234,35 @@ const TG = (() => {
   // the engine needs 4 segments of max(2, min(4, 24·T)) s (≥ 12 s); 'auto' bph assumes the longest
   const minSec = () => { const b = +$('bph').value; return Math.max(12, 4 * (b ? Math.max(2, Math.min(4, 24 * 3600 / b)) : 4)) + 0.5; };
   const LIVE_MAX = 60;
+  // ---- save the last live recording as a 16-bit mono WAV (for checking odd results) ----
+  let lastRec = null;
+  function wavBytes(x, sr) {
+    const n = x.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const str = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+    str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, 'data'); v.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, Math.round(x[i] * 32767))), true);
+    return new Uint8Array(buf);
+  }
+  window.__fileSaved = st => setStatus(st === 'ok' ? '녹음 파일을 저장했습니다.' : st === 'cancel' ? '저장을 취소했습니다.' : '녹음 파일을 저장하지 못했습니다.', st === 'fail');
+  $('wav').addEventListener('click', () => {
+    if (!lastRec) return;
+    const d = new Date(lastRec.ts), p2 = n => String(n).padStart(2, '0');
+    const w = curWatch();
+    const name = `timegrapher_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}${w ? '_' + w.name.replace(/[\\/:*?"<>|\s]+/g, '-') : ''}.wav`;
+    const bytes = wavBytes(lastRec.x, lastRec.sr);
+    if (window.AndroidRec && window.AndroidRec.saveWav) {
+      let b = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) b += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      setStatus('저장할 위치를 고르세요…');
+      try { window.AndroidRec.saveWav(btoa(b), name); } catch (e) { window.__fileSaved('fail'); }
+    } else {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' })); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }
+  });
   function stopLive(final) {
     if (!live) return;
     const L = live;
@@ -1241,6 +1278,7 @@ const TG = (() => {
     }
     $('liveBtn').textContent = '실시간 측정 시작';
     $('pick').classList.remove('disabled');
+    if (final && L.len) { lastRec = { x: L.buf.subarray(0, L.len), sr: L.sr, ts: Date.now() }; $('wav').hidden = false; }
     if (final) {
       try {
         const r = TG.measure(L.buf.subarray(0, L.len), L.sr, opts());

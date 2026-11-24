@@ -9,6 +9,8 @@
   - `TG` 객체: 분석 엔진 (`analyze` 개별 틱, `analyzeFold` 약한 신호 폴딩, `analyzeTpl` 템플릿(기본), `measure` = analyzeTpl + 무료 SNR 제한, `synth` 가상 신호)
   - 화면 로직: 시계 목록, 측정, 기록, 프로 잠금
   - 시계 보관함(2026-11-24): 등록 시계마다 카드(최근 측정·자세별 평균(프로)·메모·'이 시계로 측정'·'기록 보기'(기록 목록을 그 시계로 거름)·편집). 기록은 `wid`(시계 id)로 연결, 옛 기록은 이름으로 찾아 첫 실행 때 `wid` 붙임, 이름 바꾸면 기록 이름도 바뀜
+  - 시계 정보에 스탬핑 날짜(`stamp`, YYYY-MM-DD) — 카드에 '스탬핑 2024.03.15 · 2년 8개월째'
+  - 녹음 파일 저장: 실시간 측정이 끝나면 '녹음 파일 저장' 버튼 → 16-bit 모노 WAV. 앱은 `AndroidRec.saveWav(base64, 이름)` → `MainActivity.createFile`(ACTION_CREATE_DOCUMENT, 권한 불필요) → `window.__fileSaved('ok'|'cancel'|'fail')`. 웹은 다운로드. 이상한 결과가 나오면 이 파일을 받아 엔진으로 재분석
   - 무브먼트 목록 값: 옛 형식 `bph|la`, 새 형식 `key|bph|la`(la 비면 '미공개' → 52°). 리프트 앵글은 근거 있는 것만 채움(로렉스 3135 52°, 오메가 코액시얼 38°)
 - `MainActivity.java`: WebView, `https://appassets.androidplatform.net/` 로 assets 제공, 마이크 권한, 파일 선택, edge-to-edge 여백
 - `NativeRec.java`: AudioRecord로 48 kHz PCM 원음 수집 → 100 ms마다 base64로 `window.__recData()` 호출 (JS 이름 `AndroidRec`)
