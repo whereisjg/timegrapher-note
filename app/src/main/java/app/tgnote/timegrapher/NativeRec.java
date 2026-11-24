@@ -91,13 +91,17 @@ public class NativeRec {
 
     /** Page hands over a finished recording (WAV, base64); the user picks where it goes. */
     @JavascriptInterface
-    public void saveWav(String b64, final String name) {
+    public void saveWav(String b64, final String name) { saveFile(b64, name, "audio/wav"); }
+
+    /** Any file from the page (base64), e.g. a backup (application/json). */
+    @JavascriptInterface
+    public void saveFile(String b64, final String name, final String mime) {
         final byte[] data;
         try { data = Base64.decode(b64, Base64.DEFAULT); } catch (Exception e) {
             act.runOnUiThread(new Runnable() { public void run() { act.fileSaved("fail"); } });
             return;
         }
-        act.runOnUiThread(new Runnable() { public void run() { act.createFile(data, name, "audio/wav"); } });
+        act.runOnUiThread(new Runnable() { public void run() { act.createFile(data, name, mime); } });
     }
 
     /** The measuring sheet opened or closed (Back closes it while it is up). */
