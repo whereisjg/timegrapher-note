@@ -159,9 +159,11 @@ h1 .chip, h1 .chip.ok{vertical-align:middle;font-family:var(--f-body);font-size:
 .card .acts{display:flex;gap:6px;flex-wrap:wrap}
 .overlay{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto;display:flex;
   padding:max(24px, env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px))}
+.overlay.live{padding-bottom:calc(130px + env(safe-area-inset-bottom, 0px))}   /* room for the balance wheel */
 .sheet{margin:auto;width:100%;max-width:420px;display:grid;gap:14px;text-align:center}
 .sheet .mwatch{font-family:var(--f-serif);font-size:1.15rem}
 .sheet #mGauge{width:100%;max-width:340px;margin:0 auto -6px;display:block}
+@media (max-height:760px){.sheet{gap:9px}.sheet #mGauge{max-width:250px}.overlay{padding-top:14px}}
 .mic{position:fixed;bottom:56px;left:50%;width:0;height:0;pointer-events:none;z-index:21}
 .mic i{position:absolute;left:-120px;top:-120px;width:240px;height:240px;border-radius:50%;border:2px solid var(--gold);
   opacity:0;animation:ripple 1s ease-out forwards}
@@ -361,7 +363,7 @@ body.modal{overflow:hidden}
     <div class="rate" id="mRate">—</div>
     <div class="prog" aria-hidden="true"><i id="mBar"></i></div>
     <p class="status" id="mStatus" role="status" aria-live="polite"></p>
-    <div class="mstats" id="mStats" hidden><span>진폭<b id="mAmp"></b></span><span>비트 에러<b id="mBe"></b></span></div>
+    <div class="mstats" id="mStats"><span>진폭<b id="mAmp"></b></span><span>비트 에러<b id="mBe"></b></span></div>
     <div class="macts">
       <button class="btn primary" id="mStop" type="button">측정 멈추기</button>
       <button class="btn primary" id="mSave" type="button" hidden>기록에 저장</button>
@@ -1095,7 +1097,7 @@ const TG = (() => {
     if (!$('mOverlay').hidden) {   // mirror the live result into the measuring sheet
       drawGauge(r.rate, shaky ? 'shaky' : rough ? 'rough' : 'ok', 'mGauge');
       $('mRate').innerHTML = $('rate').innerHTML; $('mRate').classList.toggle('rough', rough);
-      $('mAmp').textContent = $('amp').textContent; $('mBe').textContent = $('be').textContent; $('mStats').hidden = false;
+      $('mAmp').textContent = $('amp').textContent; $('mBe').textContent = $('be').textContent;
     }
     $('amp').textContent = r.amp ? Math.round(r.amp) + '°' : '—';
     $('be').textContent = r.beatErr.toFixed(1) + ' ms';
@@ -1419,19 +1421,19 @@ const TG = (() => {
   function openSheet() {
     const w = curWatch();
     $('mWatch').textContent = `${w ? w.name : tx('미지정')} · ${$('pos').selectedOptions[0].textContent}`;
-    $('mRate').textContent = '—'; $('mRate').classList.remove('rough'); $('mStats').hidden = true;
+    $('mRate').textContent = '—'; $('mRate').classList.remove('rough'); $('mAmp').textContent = $('mBe').textContent = '—';
     $('mBar').style.width = '0';
     drawGauge(0, 'none', 'mGauge');
     $('mStop').hidden = false; $('mSave').hidden = $('mWav').hidden = $('mClose').hidden = $('mRetry').hidden = true;
     $('mOverlay').hidden = false; document.body.classList.add('modal'); sheetNative(true);
-    $('mMic').querySelectorAll('i').forEach(r => r.remove()); $('mMic').hidden = false;
+    $('mMic').querySelectorAll('i').forEach(r => r.remove()); $('mMic').hidden = false; $('mOverlay').classList.add('live');
   }
   function closeSheet() { $('mOverlay').hidden = true; document.body.classList.remove('modal'); sheetNative(false); }
   function sheetNative(open) { try { if (window.AndroidRec && window.AndroidRec.sheet) window.AndroidRec.sheet(open); } catch (e) {} }
   // Android Back while the sheet is up: cancels a running measurement (no result) and closes the sheet
   window.__back = () => { if (live) stopLive(false); if (!$('mOverlay').hidden) closeSheet(); };
   function sheetDone(ok) {
-    $('mMic').hidden = true; $('mStop').hidden = true; $('mClose').hidden = $('mRetry').hidden = false;
+    $('mMic').hidden = true; $('mOverlay').classList.remove('live'); $('mStop').hidden = true; $('mClose').hidden = $('mRetry').hidden = false;
     $('mSave').hidden = !ok || $('save').disabled; $('mSave').disabled = false;
     $('mWav').hidden = !ok || $('wav').hidden;
     $('mBar').style.width = '100%';
