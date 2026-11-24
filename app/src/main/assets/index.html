@@ -164,7 +164,7 @@ h1 .chip, h1 .chip.ok{vertical-align:middle;font-family:var(--f-body);font-size:
 .sheet #mGauge{width:100%;max-width:340px;margin:0 auto -6px;display:block}
 .mic{position:fixed;bottom:0;left:50%;width:0;height:0;pointer-events:none;z-index:21}
 .mic i{position:absolute;left:-90px;top:-90px;width:180px;height:180px;border-radius:50%;border:2px solid var(--gold);
-  opacity:0;animation:ripple 1.2s ease-out forwards}
+  opacity:0;animation:ripple 1s ease-out forwards}
 .mic b{position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:var(--gold)}
 @keyframes ripple{0%{transform:scale(.08);opacity:.9}100%{transform:scale(1);opacity:0}}
 .prog{height:2px;background:var(--line);margin:4px 0}
@@ -1492,27 +1492,32 @@ const TG = (() => {
   function tickPulse(L, from, to) {
     if (calmUI || $('mMic').hidden) return;
     const blk = Math.round(L.sr / 500), gap = Math.round(L.sr * 0.06);
-    const P = L.pulse || (L.pulse = { noise: 0, last: -1e9, prev: 0 });
+    const P = L.pulse || (L.pulse = { noise: 0, last: -1e9, prev: 0, y: 0 });
+    const k = Math.exp(-2 * Math.PI * 500 / L.sr);   // one-pole high-pass ~500 Hz: drops hum, keeps dull ticks
     const v = [];
     for (let a = from; a + blk <= to; a += blk) {
       let m = 0;
-      for (let i = a; i < a + blk; i++) { const d = Math.abs(L.buf[i] - P.prev); P.prev = L.buf[i]; if (d > m) m = d; }
+      for (let i = a; i < a + blk; i++) { P.y = k * (P.y + L.buf[i] - P.prev); P.prev = L.buf[i]; const d = Math.abs(P.y); if (d > m) m = d; }
       v.push(m);
     }
     // noise floor = median block of each chunk (ticks fill only a few blocks); silent start-up chunks are skipped
     const med = v.slice().sort((x, y) => x - y)[v.length >> 1] || 0;
     if (med > 0) P.noise = P.noise ? P.noise * 0.8 + med * 0.2 : med;
     if (!P.noise) return;
+    // ticks differ by watch (a soft, dull tick stays a few times above the floor): follow the loudest recent click,
+    // decaying ~1 s, and call anything above a third of it a tick, as long as it stands 4x above the noise
+    P.peak = Math.max(Math.max(...v, 0), (P.peak || 0) * 0.9);
+    const th = Math.max(2.5 * P.noise, 0.35 * P.peak);
     v.forEach((m, k) => {
       const a = from + k * blk;
-      if (m > 8 * P.noise && a - P.last > gap) {
+      if (m > th && a - P.last > gap) {
         P.last = a;
         setTimeout(ripple, Math.max(0, 100 - (to - a) / L.sr * 1000));
       }
     });
   }
   function ripple() {
-    const m = $('mMic'); if (m.hidden || m.children.length > 9) return;
+    const m = $('mMic'); if (m.hidden || m.children.length > 12) return;
     const r = document.createElement('i'); r.addEventListener('animationend', () => r.remove()); m.appendChild(r);
   }
   function clearRec() { lastRec = null; $('wav').hidden = true; }   // a new result replaces the saved-able recording
