@@ -21,6 +21,7 @@
     - **문구를 추가·수정하면 표 `D`에도 넣고 `python3 tools/i18n_check.py app/src/main/assets/index.html` 실행** (빠진 번역이 있으면 실패)
     - 변수 이름 `L`·`tr`은 페이지 안에서 다른 뜻(실시간 측정 객체, 표의 <tr>)으로 쓰여서 번역 함수는 `TX`·`tx`
     - 안드로이드 리소스: `values`(영어 기본)·`values-ko`·`values-ja`·`values-de`·`values-b+zh+Hans`(간체만, 대만·홍콩은 영어)에 app_name(Watch Note / 워치노트 / ウォッチノート / Watch Note / 手表笔记), pick_audio. 홈 화면 앱 이름은 휴대폰 언어를 따름
+  - 디자인(2026-11-24): '클래식 카탈로그' — 크림색 종이 바탕(#F4EEE2, 다크 #17130F), 제목·숫자는 명조(`--f-serif`, Noto Serif CJK), 얇은 선·점선 표, 이중선 탭, 금색 포인트(`--gold`). 결과 위에 반원 계기판 `drawGauge()`(−10~+10 s/d, 금색 띠 COSC −4~+6·METAS 0~+5, 불안정이면 점선 바늘, 예비값이면 흐리게). 캔버스는 CSS 변수를 직접 읽으므로 `--f-mono`에 var() 쓰지 말 것. MainActivity·colors.xml 배경색도 같은 색
   - 자세 이름(2026-11-24): '위/아래'가 폰을 대는 위치와 헷갈려 '천장/바닥'으로 (다이얼이 천장, 9시가 바닥 (용두가 천장) …). 저장 값(option value)은 옛 이름 그대로(`다이얼 위` 등), 화면은 `POS` 표 → `pname()`. 자세 선택 아래에 '폰을 어디에 대든 상관없이 …' 안내
   - 무브먼트 목록 값: 옛 형식 `bph|la`, 새 형식 `key|bph|la`(la 비면 '미공개' → 52°). 리프트 앵글은 근거 있는 것만 채움(로렉스 3135 52°, 오메가 코액시얼 38°)
 - `MainActivity.java`: WebView, `https://appassets.androidplatform.net/` 로 assets 제공, 마이크 권한, 파일 선택, edge-to-edge 여백

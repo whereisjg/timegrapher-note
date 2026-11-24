@@ -127,7 +127,7 @@ public class MainActivity extends Activity {
 
     private void applyColors() {
         boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-        int bg = night ? 0xFF0F1315 : 0xFFEDF0F1;
+        int bg = night ? 0xFF17130F : 0xFFF4EEE2;
         root.setBackgroundColor(bg);
         web.setBackgroundColor(bg);
         if (Build.VERSION.SDK_INT >= 30) {
