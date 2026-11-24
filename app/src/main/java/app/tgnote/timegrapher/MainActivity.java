@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
                 i.setType("*/*");
                 i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"audio/*", "video/*"});
                 try {
-                    startActivityForResult(Intent.createChooser(i, "녹음 파일 선택"), 2);
+                    startActivityForResult(Intent.createChooser(i, getString(R.string.pick_audio)), 2);
                 } catch (Exception e) {
                     fileCb = null;
                     return false;

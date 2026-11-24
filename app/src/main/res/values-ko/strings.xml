@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">워치노트</string>
+    <string name="pick_audio">녹음 파일 선택</string>
+</resources>

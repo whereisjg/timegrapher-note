@@ -14,6 +14,13 @@
   - 시계 보관함(2026-11-24): 등록 시계마다 카드(최근 측정·자세별 평균(프로)·메모·'이 시계로 측정'·'기록 보기'(기록 목록을 그 시계로 거름)·편집). 기록은 `wid`(시계 id)로 연결, 옛 기록은 이름으로 찾아 첫 실행 때 `wid` 붙임, 이름 바꾸면 기록 이름도 바뀜
   - 시계 정보에 스탬핑 날짜(`stamp`, YYYY-MM-DD) — 카드에 '스탬핑 2024.03.15 · 2년 8개월째'
   - 녹음 파일 저장: 실시간 측정이 끝나면 '녹음 파일 저장' 버튼 → 16-bit 모노 WAV. 앱은 `AndroidRec.saveWav(base64, 이름)` → `MainActivity.createFile`(ACTION_CREATE_DOCUMENT, 권한 불필요) → `window.__fileSaved('ok'|'cancel'|'fail')`. 웹은 다운로드. 이상한 결과가 나오면 이 파일을 받아 엔진으로 재분석
+  - 언어(2026-11-24): 한국어·English·日本語. 제목 옆 선택 상자, localStorage `tg-lang`, 처음엔 휴대폰 언어(ko/ja, 그 밖은 en). 한국어 문구가 원문이고 `<head>`의 i18n 스크립트 표 `D`(한국어 → [영어, 일본어])로 바꿈
+    - 화면 고정 문구: `I18N.apply()`가 페이지 시작 때 글자·placeholder·aria-label을 표에서 찾아 바꿈
+    - JS 문구: 반드시 TX`...` 태그 (`${}`는 {0},{1}…로 표의 키가 됨). 저장되는 값(자세 option의 value, '미지정')은 한국어 그대로 두고 보여 줄 때 `tx()`
+    - 결제 메시지(Billing.java)는 한국어로 오고 `tx()`가 번역(괄호 속 숫자 처리)
+    - **문구를 추가·수정하면 표 `D`에도 넣고 `python3 tools/i18n_check.py app/src/main/assets/index.html` 실행** (빠진 번역이 있으면 실패)
+    - 변수 이름 `L`·`tr`은 페이지 안에서 다른 뜻(실시간 측정 객체, 표의 <tr>)으로 쓰여서 번역 함수는 `TX`·`tx`
+    - 안드로이드 리소스: `values`(영어 기본)·`values-ko`·`values-ja`에 app_name(Watch Note / 워치노트 / ウォッチノート), pick_audio. 홈 화면 앱 이름은 휴대폰 언어를 따름
   - 무브먼트 목록 값: 옛 형식 `bph|la`, 새 형식 `key|bph|la`(la 비면 '미공개' → 52°). 리프트 앵글은 근거 있는 것만 채움(로렉스 3135 52°, 오메가 코액시얼 38°)
 - `MainActivity.java`: WebView, `https://appassets.androidplatform.net/` 로 assets 제공, 마이크 권한, 파일 선택, edge-to-edge 여백
 - `NativeRec.java`: AudioRecord로 48 kHz PCM 원음 수집 → 100 ms마다 base64로 `window.__recData()` 호출 (JS 이름 `AndroidRec`)
@@ -78,7 +85,7 @@
 - 실제 폰·시계 실측으로 검출 임계값과 진폭 검출 조정
 - 스크린샷을 실제 측정 화면으로 교체
 - 장기 측정 기록(며칠간 실측 누적 → 하루 평균) 기능
-- 영어 지원(strings, 스토어 문구)
+- 스토어 문구 영어·일본어 (앱 화면은 2026-11-24 3개 언어 완료)
 - 측정 결과의 오차가 1분마다 ±2~3초 흔들리는 문제: 측정 시간을 2~3분으로 늘리는 옵션이나 여러 번 잰 값의 평균 표시를 검토
 - 며칠간 실측과 앱 값을 비교해 휴대폰 보정값 기본값을 정할지 결정
 - 갤럭시 폴드8 외 다른 폰에서 같은 시계로 비교 측정 (비공개 테스트 기간에 진행)

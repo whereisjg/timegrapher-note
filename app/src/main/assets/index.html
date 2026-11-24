@@ -1,4 +1,51 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>window.__APP__=true</script></head><body><title>워치노트</title>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>window.__APP__=true</script><script>
+/* ===== i18n: Korean is the source text; English / Japanese come from this table =====
+   TX`...` translates a template (placeholders {0}, {1}…), tx(s) translates a plain string,
+   and the static markup is translated once by I18N.apply() before the page script renders. */
+(() => {
+  const D = {"워치노트":["Watch Note","ウォッチノート"],"프로":["Pro","Pro"],"측정":["Measure","測定"],"시계 보관함":["My watches","マイ時計"],"측정 설정":["Setup","測定設定"],"내 시계":["My watch","マイ時計"],"편집":["Edit","編集"],"삭제":["Delete","削除"],"새 시계 추가":["Add a watch","時計を追加"],"이름":["Name","名前"],"예: 다이버 블랙, 아버지 선물 시계":["e.g. Black diver, Dad's gift","例：黒のダイバー、父から贈られた時計"],"무브먼트":["Movement","ムーブメント"],"모름 · 직접 입력":["Unknown · enter manually","不明・手動入力"],"ETA 2824 · 셀리타 SW200 계열 (28,800 · 50°)":["ETA 2824 · Sellita SW200 family (28,800 · 50°)","ETA 2824・セリタ SW200 系 (28,800・50°)"],"세이코 4R · 6R · NH 계열 (21,600 · 53°)":["Seiko 4R · 6R · NH family (21,600 · 53°)","セイコー 4R・6R・NH 系 (21,600・53°)"],"미요타 8 계열 (21,600 · 52°)":["Miyota 8 family (21,600 · 52°)","ミヨタ 8 系 (21,600・52°)"],"미요타 9 계열 (28,800 · 52°)":["Miyota 9 family (28,800 · 52°)","ミヨタ 9 系 (28,800・52°)"],"ETA 2801 · 셀리타 SW216 수동 계열 (21,600 · 50°)":["ETA 2801 · Sellita SW216 hand-wound (21,600 · 50°)","ETA 2801・セリタ SW216 手巻き系 (21,600・50°)"],"ETA 2892 · 셀리타 SW300 계열 (28,800 · 리프트 앵글 미공개)":["ETA 2892 · Sellita SW300 family (28,800 · lift angle unpublished)","ETA 2892・セリタ SW300 系 (28,800・リフト角非公開)"],"ETA 7750 · 셀리타 SW500 크로노 계열 (28,800 · 미공개)":["ETA 7750 · Sellita SW500 chrono (28,800 · unpublished)","ETA 7750・セリタ SW500 クロノ系 (28,800・非公開)"],"해밀턴 H-10 오토 (21,600 · 미공개)":["Hamilton H-10 automatic (21,600 · unpublished)","ハミルトン H-10 自動巻き (21,600・非公開)"],"해밀턴 H-50 수동 · ETA 2801 기반 (21,600 · 미공개)":["Hamilton H-50 hand-wound · ETA 2801 based (21,600 · unpublished)","ハミルトン H-50 手巻き・ETA 2801 ベース (21,600・非公開)"],"튜더 MT56xx (28,800 · 미공개)":["Tudor MT56xx (28,800 · unpublished)","チューダー MT56xx (28,800・非公開)"],"로렉스 3135 (28,800 · 52°)":["Rolex 3135 (28,800 · 52°)","ロレックス 3135 (28,800・52°)"],"오메가 코액시얼 8500·8800·8900 계열 (25,200 · 38°)":["Omega Co-Axial 8500·8800·8900 family (25,200 · 38°)","オメガ コーアクシャル 8500・8800・8900 系 (25,200・38°)"],"모름 (자동)":["Unknown (auto)","不明（自動）"],"리프트 앵글 (°)":["Lift angle (°)","リフト角 (°)"],"bph와 리프트 앵글은 시계 설명서나 무브먼트 사양에 나옵니다. 모르면 비워 두세요. bph는 소리로 추정하고, 리프트 앵글은 일반값 52°를 씁니다. '미공개'는 제조사가 리프트 앵글을 밝히지 않은 무브먼트라 52°로 채웁니다(진폭에만 영향).":["bph and lift angle are in the watch manual or movement specs. Leave them blank if unsure: bph is estimated from the sound and the lift angle defaults to 52°. 'Unpublished' means the maker does not state the lift angle, so 52° is used (affects amplitude only).","bph とリフト角は取扱説明書やムーブメントの仕様に載っています。分からなければ空欄のままで構いません。bph は音から推定し、リフト角は一般的な 52° を使います。「非公開」はメーカーがリフト角を公表していないムーブメントで、52° を入れます（振り角にのみ影響）。"],"스탬핑 날짜 (보증서에 찍힌 구입일)":["Warranty stamp date (purchase date on the card)","保証書の日付（購入日）"],"취소":["Cancel","キャンセル"],"저장":["Save","保存"],"자세":["Position","姿勢"],"다이얼 위":["Dial up","文字盤上"],"다이얼 아래":["Dial down","文字盤下"],"9시 아래 (용두 위)":["9 down (crown up)","9時下（リューズ上）"],"3시 아래 (용두 아래)":["3 down (crown down)","3時下（リューズ下）"],"6시 아래":["6 down","6時下"],"12시 아래":["12 down","12時下"],"자동":["Auto","自動"],"계산 방식":["Method","計算方式"],"자동 (틱이 약하면 약한 신호 모드로 전환)":["Auto (switches to weak-signal mode when ticks are faint)","自動（音が弱いと弱信号モードに切替）"],"또렷한 신호만 (신호 대 잡음비 25 이상)":["Clear signals only (SNR 25 or more)","明瞭な信号のみ（SN比 25 以上）"],"bph는 시간당 진동 횟수(예: 28,800 · 21,600)입니다. 리프트 앵글은 진폭 계산에만 쓰이며, 모르면 일반값 52°를 두세요.":["bph is beats per hour (e.g. 28,800 · 21,600). The lift angle is used only for amplitude; if unsure, keep the usual 52°.","bph は 1 時間あたりの振動数です（例：28,800・21,600）。リフト角は振り角の計算にのみ使います。分からなければ一般的な 52° のままにしてください。"],"휴대폰 보정값 (초/일)":["Phone correction (s/d)","スマホ補正値（秒/日）"],"휴대폰 녹음 회로의 시계도 하루 1~3초 정도 오차가 있습니다. 매장 타임그래퍼나 일주일 실측과 비교해 차이만큼 넣으면 모든 결과에 더해집니다.":["The phone's audio clock can itself be off by 1–3 seconds a day. Compare with a shop timegrapher or a week of real-time checks and enter the difference; it is added to every result.","スマホの録音回路の時計にも 1 日 1〜3 秒ほどの誤差があります。店のタイムグラファーや 1 週間の実測と比べ、その差を入れるとすべての結果に加算されます。"],"실시간 측정 시작":["Start live measurement","リアルタイム測定を開始"],"녹음 파일 선택":["Choose a recording","録音ファイルを選択"],"녹음하는 법":["How to record","録音のしかた"],"조용한 방에서 휴대폰 녹음 앱을 일반(표준) 모드로 켭니다. 소음 제거 모드는 틱 소리를 깎아 버립니다.":["In a quiet room, start the phone's recorder in normal (standard) mode. Noise-reduction modes cut the tick sound.","静かな部屋で、スマホの録音アプリを通常（標準）モードで起動します。ノイズ除去モードはチック音を削ってしまいます。"],"휴대폰 아래쪽 마이크에 시계 뒷판이나 케이스 옆면을 직접 대고, 수건 위처럼 진동이 덜 전해지는 곳에 둡니다.":["Press the caseback or case side against the phone's bottom microphone and rest them on something soft, like a towel.","時計の裏蓋かケース側面をスマホ下部のマイクに直接当て、タオルの上など振動の伝わりにくい所に置きます。"],"측정할 자세를 유지한 채 30~60초 녹음합니다.":["Hold the position you are measuring and record 30–60 seconds.","測定する姿勢のまま 30〜60 秒録音します。"],"오토매틱은 태엽이 충분히 감긴 상태에서 재야 진폭이 제대로 나옵니다.":["Wind an automatic fully first, or the amplitude will read low.","自動巻きはゼンマイを十分に巻いた状態で測ると振り角が正しく出ます。"],"프로 업그레이드":["Upgrade to Pro","Pro にアップグレード"],"약한 신호 모드: 케이스가 두꺼운 조용한 시계도 측정":["Weak-signal mode: measure quiet watches with thick cases","弱信号モード：ケースが厚く音の小さい時計も測定"],"시계 무제한 등록 (무료는 1개)":["Unlimited watches (free: 1)","時計の登録が無制限（無料版は 1 本）"],"측정 기록 무제한 저장과 자세별 평균 (무료는 최근 5개)":["Full measurement history and per-position averages (free: last 5)","測定記録の無制限表示と姿勢別平均（無料版は直近 5 件）"],"한 번 결제하면 계속 쓸 수 있고, 같은 구글 계정이면 다른 폰에서도 복원됩니다.":["Pay once and keep it. It is restored on other phones with the same Google account.","1 回の購入でずっと使えます。同じ Google アカウントなら他のスマホでも復元されます。"],"프로로 업그레이드":["Upgrade to Pro","Pro にアップグレード"],"측정 결과":["Result","測定結果"],"샘플 신호 (예시 데이터)":["Sample signal (example data)","サンプル信号（例）"],"진폭":["Amplitude","振り角"],"비트 에러":["Beat error","ビートエラー"],"사용한 틱":["Ticks used","使用したチック"],"트레이스":["Trace","トレース"],"짝수 틱":["Even ticks","偶数チック"],"홀수 틱":["Odd ticks","奇数チック"],"위로 기울면 빠름":["Rising = running fast","右上がり＝進み"],"시간에 따른 틱 위치 그래프":["Tick position over time","時間に対するチック位置のグラフ"],"평균 틱 파형":["Average tick waveform","平均チック波形"],"평균 틱 소리 파형":["Average tick sound waveform","平均チック音の波形"],"오차 옆의 ±는 이번 측정의 계산 오차입니다. 자세나 태엽 상태가 바뀌면 시계의 실제 오차가 하루 몇 초씩 달라지므로, 하루 평균을 알려면 여러 자세에서 재 보세요. 진폭은 휴대폰 마이크 특성상 ±20° 정도 오차가 있는 참고값입니다.":["The ± next to the rate is this measurement's calculation uncertainty. A watch's real rate shifts by a few seconds a day with position and mainspring state, so measure several positions for a daily average. Amplitude is a guide value (about ±20° with a phone microphone).","日差の横の ± は今回の測定の計算誤差です。姿勢やゼンマイの状態で実際の日差は 1 日数秒変わるため、1 日の平均を知るには複数の姿勢で測ってください。振り角はスマホのマイクの特性上 ±20° ほどの誤差がある参考値です。"],"녹음 파일 저장":["Save recording","録音を保存"],"기록에 저장":["Save to history","記録に保存"],"＋ 새 시계":["＋ New watch","＋ 時計を追加"],"등록한 시계가 여기에 카드로 모입니다. 시계마다 최근 측정, 자세별 평균, 메모를 볼 수 있습니다.":["Your watches appear here as cards, each with its latest measurement, per-position averages and notes.","登録した時計がここにカードで並びます。時計ごとに最新の測定、姿勢別平均、メモを確認できます。"],"측정 기록 · 이 브라우저에만 저장":["History · stored in this browser only","測定記録・このブラウザにのみ保存"],"전체 보기":["Show all","すべて表示"],"전체 삭제":["Delete all","すべて削除"],"일시":["Date","日時"],"시계":["Watch","時計"],"오차 s/d":["Rate s/d","日差 s/d"],"아직 저장된 측정이 없습니다. 파일을 분석한 뒤 '기록에 저장'을 누르면 여기에 쌓입니다.":["No saved measurements yet. After measuring, tap 'Save to history' and they will appear here.","保存された測定はまだありません。測定後に「記録に保存」を押すとここにたまります。"],"녹음이 너무 짧습니다. 최소 10초, 권장 30~60초로 녹음해 주세요.":["The recording is too short. Record at least 10 s, ideally 30–60 s.","録音が短すぎます。最低 10 秒、できれば 30〜60 秒録音してください。"],"틱 소리를 찾지 못했습니다. 더 조용한 곳에서, 시계를 마이크에 더 가까이 대고 녹음해 주세요.":["No tick sound found. Record somewhere quieter with the watch closer to the microphone.","チック音が見つかりません。もっと静かな所で、時計をマイクに近づけて録音してください。"],"잡힌 틱이 너무 적습니다. 마이크에 시계를 밀착하고 다시 녹음해 주세요.":["Too few ticks detected. Press the watch against the microphone and record again.","検出したチックが少なすぎます。時計をマイクに密着させてもう一度録音してください。"],"분석에 실패했습니다. 다시 녹음해 주세요.":["Analysis failed. Please record again.","解析に失敗しました。もう一度録音してください。"],"일정한 틱을 충분히 찾지 못했습니다. bph 설정을 확인하거나 다시 녹음해 주세요.":["Not enough regular ticks found. Check the bph setting or record again.","規則的なチックが十分に見つかりません。bph の設定を確認するか、もう一度録音してください。"],"녹음이 짧습니다. 최소 12~16초, 권장 60초 이상 재 주세요.":["The recording is short. Measure at least 12–16 s, ideally 60 s or more.","録音が短いです。最低 12〜16 秒、できれば 60 秒以上測ってください。"],"녹음이 짧아 아직 계산할 수 없습니다. 조금 더 재 주세요.":["Not long enough to calculate yet. Keep measuring a little longer.","まだ短くて計算できません。もう少し測ってください。"],"틱 소리를 찾지 못했습니다. 시계 옆면을 마이크 구멍에 바로 대고 다시 측정해 주세요.":["No tick sound found. Put the side of the watch right on the microphone hole and measure again.","チック音が見つかりません。時計の側面をマイク穴に直接当てて、もう一度測ってください。"],"틱 소리가 약해 정확히 재기 어렵습니다. 시계 옆면을 마이크 구멍에 바로 대고 조용한 곳에서 다시 재 주세요.":["The ticks are too faint to measure accurately. Put the side of the watch right on the microphone hole and try again somewhere quiet.","チック音が弱く正確に測れません。時計の側面をマイク穴に直接当て、静かな所でもう一度測ってください。"]," 케이스가 두꺼워 조용한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.":[" Quiet watches with thick cases can be measured with Pro's weak-signal mode."," ケースが厚く音の小さい時計は Pro の弱信号モードで測れます。"],"자동 (약한 신호도 계산)":["Auto (weak signals too)","自動（弱い信号も計算）"],"자동 (또렷한 신호만 · 약한 신호는 프로)":["Auto (clear signals only · weak signals in Pro)","自動（明瞭な信号のみ・弱信号は Pro）"],"파형 없음":["No waveform","波形なし"],"언락 → 드롭 {0} ms":["Unlock → drop {0} ms","アンロック → ドロップ {0} ms"],"드롭 소리 구분 불가":["Drop sound not resolved","ドロップ音を判別できません"],"불안정<small>신호 약함<\/small>":["Unstable<small>weak signal<\/small>","不安定<small>信号が弱い<\/small>"]," · 예비값":[" · preliminary","・暫定値"],"{0}<small>{1}초/일{2}<\/small>":["{0}<small>{1}s/d{2}<\/small>","{0}<small>{1}秒/日{2}<\/small>"],"이내":["within","以内"],"벗어남":["outside","範囲外"],"신호 대 잡음비":["Signal-to-noise","SN比"],"<span><i class=\"dot\" style=\"background:var(--tic)\"><\/i>구간별 위치<\/span><span>위로 기울면 빠름<\/span>":["<span><i class=\"dot\" style=\"background:var(--tic)\"><\/i>Position per segment<\/span><span>Rising = running fast<\/span>","<span><i class=\"dot\" style=\"background:var(--tic)\"><\/i>区間ごとの位置<\/span><span>右上がり＝進み<\/span>"],"<span><i class=\"dot\" style=\"background:var(--tic)\"><\/i>짝수 틱<\/span><span><i class=\"dot\" style=\"background:var(--toc)\"><\/i>홀수 틱<\/span><span>위로 기울면 빠름<\/span>":["<span><i class=\"dot\" style=\"background:var(--tic)\"><\/i>Even ticks<\/span><span><i class=\"dot\" style=\"background:var(--toc)\"><\/i>Odd ticks<\/span><span>Rising = running fast<\/span>","<span><i class=\"dot\" style=\"background:var(--tic)\"><\/i>偶数チック<\/span><span><i class=\"dot\" style=\"background:var(--toc)\"><\/i>奇数チック<\/span><span>右上がり＝進み<\/span>"],"약한 신호 모드: ":["Weak-signal mode: ","弱信号モード："],"{0}{1}초 녹음을 {2}개 구간으로 나눠 박자 간격으로 겹쳐 계산했습니다.":["{0}Split the {1}-second recording into {2} segments and folded them at the beat period.","{0}{1} 秒の録音を {2} 区間に分け、振動周期で重ね合わせて計算しました。"],"신호 대 잡음비가 {0}로 낮아(6 이상 필요) 결과를 믿기 어렵습니다(추정값 {1}초/일). 시계 옆면을 마이크 구멍에 바로 대고 더 조용한 곳에서 재 주세요.":["The signal-to-noise ratio is only {0} (6 or more needed), so the result is unreliable (estimate {1} s/d). Put the side of the watch right on the microphone hole and measure somewhere quieter.","SN比が {0} と低く（6 以上が必要）、結果は信頼できません（推定 {1} 秒/日）。時計の側面をマイク穴に直接当て、もっと静かな所で測ってください。"],"{0}초 녹음에서 틱 {1}개를 찾아 {2}개를 계산에 썼습니다.":["Found {1} ticks in {0} s and used {2}.","{0} 秒の録音でチックを {1} 個検出し、{2} 個を計算に使いました。"],"케이스가 두꺼워 틱이 약한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.":["Watches with faint ticks through a thick case can be measured with Pro's weak-signal mode.","ケースが厚くチックが弱い時計は Pro の弱信号モードで測れます。"],"예상 틱 {0}개 중 {1}개만 일정하게 잡혔습니다(추정값 {2}초/일). 시계 뒷판을 폰 아래쪽 마이크 구멍에 바로 붙이고, 주변 소음을 줄여 주세요.":["Only {1} of {0} expected ticks were regular (estimate {2} s/d). Put the caseback right on the phone's bottom microphone hole and reduce noise around you.","予想 {0} 個のうち {1} 個しか規則的に検出できませんでした（推定 {2} 秒/日）。裏蓋をスマホ下部のマイク穴に直接当て、周りの雑音を減らしてください。"],"틱 간격이 고르지 않아 결과가 흔들릴 수 있습니다. 더 조용한 곳에서 다시 재 보세요.":["Tick spacing is uneven, so the result may wobble. Try again somewhere quieter.","チック間隔が不揃いで結果がぶれる可能性があります。もっと静かな所で測り直してください。"],"소리로 추정한 bph는 {0}입니다. 설정값을 확인하세요.":["The bph estimated from the sound is {0}. Check your setting.","音から推定した bph は {0} です。設定を確認してください。"],"진폭은 계산하지 않았습니다. 평균 틱 파형에서 큰 소리(드롭) 앞의 작은 소리(언락)가 잡히지 않았거나, 계산값이 130~370° 범위를 벗어났습니다.":["Amplitude was not calculated: the small unlock sound before the loud drop was not found in the average waveform, or the result was outside 130–370°.","振り角は計算しませんでした。平均波形で大きな音（ドロップ）の前の小さな音（アンロック）が見つからないか、計算値が 130〜370° の範囲外でした。"],"비트 에러가 1 ms를 넘습니다. 여러 번 재서 같으면 점검 때 언급할 만합니다.":["Beat error is over 1 ms. If it stays there over several measurements, mention it at the next service.","ビートエラーが 1 ms を超えています。何度測っても同じなら、点検時に伝えるとよいでしょう。"],"선택 안 함":["None","選択なし"],"등록된 시계 없음":["No watches yet","登録された時計なし"],"＋ 새 시계 추가":["＋ Add a watch","＋ 時計を追加"],"시계 편집":["Edit watch","時計を編集"],"무료 버전은 시계를 {0}개까지 등록할 수 있습니다.":["The free version holds up to {0} watch.","無料版で登録できる時計は {0} 本までです。"],"한 번 더 누르면 삭제":["Tap again to delete","もう一度押すと削除"],"'{0}'을(를) 목록에서 지웠습니다. 저장된 측정 기록은 남아 있습니다.":["Removed '{0}' from the list. Its saved measurements are kept.","「{0}」を一覧から削除しました。保存した測定記録は残っています。"],"시계 이름을 입력해 주세요.":["Please enter a name for the watch.","時計の名前を入力してください。"],"'{0}'을(를) 저장했습니다.":["Saved '{0}'.","「{0}」を保存しました。"],"'{0}' 분석 중…":["Analysing '{0}'…","「{0}」を解析中…"],"'{0}' 분석 완료":["Finished analysing '{0}'","「{0}」の解析が完了しました"],"이 파일을 읽지 못했습니다. m4a, mp3, wav 녹음 파일로 다시 시도해 주세요.":["Could not read this file. Please try an m4a, mp3 or wav recording.","このファイルを読み込めませんでした。m4a、mp3、wav の録音ファイルで試してください。"],"bph 자동":["bph auto","bph 自動"],"{0}{1} · 리프트 앵글 {2}°":["{0}{1} · lift angle {2}°","{0}{1}・リフト角 {2}°"]," · {0}일째":[" · day {0}","・{0} 日目"]," · {0}개월째":[" · {0} months","・{0} か月"]," · {0}년 {1}개월째":[" · {0} yr {1} mo","・{0} 年 {1} か月"]," · {0}년째":[" · {0} yr","・{0} 年"],"스탬핑 {0}{1}":["Stamped {0}{1}","保証書 {0}{1}"],"{0}초/일 · {1}":["{0}s/d · {1}","{0}秒/日・{1}"],"최근 {0} · 진폭 {1} · 비트 에러 {2} ms · 기록 {3}회":["Last {0} · amplitude {1} · beat error {2} ms · {3} records","最新 {0}・振り角 {1}・ビートエラー {2} ms・記録 {3} 件"],"자세별 평균은 프로 기능입니다.":["Per-position averages are a Pro feature.","姿勢別平均は Pro の機能です。"],"아직 측정 기록이 없습니다.":["No measurements yet.","まだ測定記録がありません。"],"메모 (구입일, 오버홀, 특이사항)":["Notes (purchase, service, anything else)","メモ（購入日、オーバーホール、特記事項）"]," 메모":[" notes"," のメモ"],"이 시계로 측정":["Measure this watch","この時計を測定"],"'{0}'을(를) 골랐습니다. 자세를 정하고 측정을 시작하세요.":["Selected '{0}'. Choose a position and start measuring.","「{0}」を選びました。姿勢を決めて測定を始めてください。"],"기록 보기 ({0})":["History ({0})","記録 ({0})"],"이 시계로 저장한 측정이 아직 없습니다.":["No saved measurements for this watch yet.","この時計で保存した測定はまだありません。"],"이 기록 삭제":["Delete this record","この記録を削除"]," (저장된 기록 {0}개, 프로로 바꾸면 모두 보임)":[" ({0} records saved; all visible with Pro)","（保存済み {0} 件、Pro ですべて表示）"],"<p class=\"hint\">자세별 평균과 무제한 기록은 프로 기능입니다. 무료 버전은 최근 {0}개만 보여 줍니다{1}.<\/p>":["<p class=\"hint\">Per-position averages and full history are Pro features. The free version shows the last {0}{1}.<\/p>","<p class=\"hint\">姿勢別平均と無制限の記録は Pro の機能です。無料版は直近 {0} 件のみ表示します{1}。<\/p>"],"{0} · {1}: {2} s/d ({3}회)":["{0} · {1}: {2} s/d ({3}×)","{0}・{1}：{2} s/d（{3} 回）"],"미지정":["Unassigned","未指定"],"기록에 저장했습니다.":["Saved to history.","記録に保存しました。"],"이 브라우저에서는 저장할 수 없어 이번 화면에서만 보입니다.":["This browser cannot store data, so it is shown on this screen only.","このブラウザでは保存できないため、この画面でのみ表示されます。"],"한 번 더 누르면 저장된 {0}개 모두 삭제":["Tap again to delete all {0} saved records","もう一度押すと保存済み {0} 件をすべて削除"],"구글 결제 창을 여는 중…":["Opening Google Play payment…","Google の決済画面を開いています…"],"결제 창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.":["Could not open payment. Please try again shortly.","決済画面を開けませんでした。しばらくしてからもう一度お試しください。"],"먼저 ＋ 새 시계 추가로 내 시계를 등록하면 bph가 자동으로 맞춰지고, 기록이 시계별로 정리됩니다.":["Start by adding your watch with ＋ Add a watch: bph is then set automatically and records are kept per watch.","まず「＋ 時計を追加」で時計を登録すると、bph が自動で設定され、記録が時計ごとに整理されます。"],"녹음 파일을 저장했습니다.":["Recording saved.","録音を保存しました。"],"저장을 취소했습니다.":["Save cancelled.","保存をキャンセルしました。"],"녹음 파일을 저장하지 못했습니다.":["Could not save the recording.","録音を保存できませんでした。"],"저장할 위치를 고르세요…":["Choose where to save…","保存先を選んでください…"],"측정 완료 · {0}초 전체로 계산했습니다.":["Done · calculated from all {0} s.","測定完了・{0} 秒全体で計算しました。"],"측정을 멈췄습니다.":["Measurement stopped.","測定を止めました。"],"마이크 권한을 허용한 뒤 다시 눌러 주세요. 허용 창이 뜨지 않으면 휴대폰 설정 > 애플리케이션 > 워치노트 > 권한에서 마이크를 허용해 주세요.":["Allow microphone access, then tap again. If no prompt appears, allow the microphone in phone Settings > Apps > Watch Note > Permissions.","マイクの使用を許可してから、もう一度押してください。許可画面が出ない場合は、設定 > アプリ > ウォッチノート > 権限でマイクを許可してください。"],"마이크를 열지 못했습니다. 통화나 녹음 중인 다른 앱이 있는지 확인해 주세요.":["Could not open the microphone. Check that no call or other recording app is using it.","マイクを開けませんでした。通話中や録音中の他のアプリがないか確認してください。"],"측정 멈추기":["Stop measuring","測定を止める"],"측정 중 0초 · 시계를 마이크에 대고 움직이지 마세요.":["Measuring 0 s · keep the watch still on the microphone.","測定中 0 秒・時計をマイクに当てたまま動かさないでください。"]," 마이크 입력이 끊겨 여기서 멈췄습니다.":[" Stopped here because the microphone input was lost."," マイク入力が途切れたため、ここで止めました。"],"마이크 입력이 끊겼습니다. 통화 중이거나 다른 앱이 마이크를 쓰고 있는지 확인한 뒤 다시 시작해 주세요.":["Microphone input was lost. Check for a call or another app using the microphone, then start again.","マイク入力が途切れました。通話中か、他のアプリがマイクを使っていないか確認してから、もう一度始めてください。"],"측정 중 {0}초 · {1}초부터 결과가 나옵니다.":["Measuring {0} s · results from {1} s.","測定中 {0} 秒・{1} 秒から結果が出ます。"],"측정 중 {0}/{1}초":["Measuring {0}/{1} s","測定中 {0}/{1} 秒"],"약한 신호":["weak signal","弱信号"],"개별 틱":["individual ticks","個別チック"]," · 끊김 ":[" · gaps ","・途切れ "],"측정 중 {0}/{1}초 · {2} · {3}{4}k{5}":["Measuring {0}/{1} s · {2} · {3}{4}k{5}","測定中 {0}/{1} 秒・{2}・{3}{4}k{5}"],"측정 중 {0}초 · {1}":["Measuring {0} s · {1}","測定中 {0} 秒・{1}"],"마이크를 쓸 수 없습니다. 휴대폰 설정 > 애플리케이션 > 워치노트 > 권한에서 마이크를 허용해 주세요.":["The microphone is unavailable. Allow it in phone Settings > Apps > Watch Note > Permissions.","マイクを使えません。設定 > アプリ > ウォッチノート > 権限でマイクを許可してください。"],"측정 기록 · 이 휴대폰에만 저장":["History · stored on this phone only","測定記録・このスマホにのみ保存"],"구글 플레이 결제에 연결하지 못했습니다. 인터넷 연결을 확인하고 잠시 후 다시 눌러 주세요.":["Could not connect to Google Play billing. Check your internet connection and tap again shortly.","Google Play の決済に接続できませんでした。インターネット接続を確認し、しばらくしてからもう一度押してください。"],"결제 창을 열지 못했습니다. ({0})":["Could not open payment. ({0})","決済画面を開けませんでした。({0})"],"결제가 완료되지 않았습니다. ({0})":["The payment was not completed. ({0})","決済が完了しませんでした。({0})"],"프로가 활성화되었습니다. 고맙습니다!":["Pro is now active. Thank you!","Pro が有効になりました。ありがとうございます！"],"결제가 승인 대기 중입니다. 완료되면 프로가 자동으로 켜집니다.":["The payment is pending. Pro will turn on automatically once it completes.","決済の承認待ちです。完了すると Pro が自動で有効になります。"]};
+  let lang = null;
+  try { lang = localStorage.getItem('tg-lang'); } catch (e) {}
+  if (!['ko', 'en', 'ja'].includes(lang)) {
+    const n = (navigator.language || 'ko').toLowerCase();
+    lang = n.startsWith('ko') ? 'ko' : n.startsWith('ja') ? 'ja' : 'en';
+  }
+  const look = k => { if (lang === 'ko') return null; const v = D[k]; return v ? v[lang === 'en' ? 0 : 1] : null; };
+  const fill = (t, v) => t.replace(/\{(\d)\}/g, (m, i) => v[+i]);
+  window.TX = (s, ...v) => {
+    const key = s.map((p, i) => p + (i < s.length - 1 ? '{' + i + '}' : '')).join('');
+    const t = look(key);
+    return fill(t === null ? key : t, v);
+  };
+  window.tx = s => {
+    if (s == null || lang === 'ko') return s;
+    const t = look(s); if (t !== null) return t;
+    const m = /\((-?\d+)\)/.exec(s);         // messages carrying a number, e.g. "...(7)"
+    if (m) { const t2 = look(s.replace(m[0], '({0})')); if (t2 !== null) return fill(t2, [m[1]]); }
+    return s;
+  };
+  window.I18N = {
+    lang,
+    set(l) { try { localStorage.setItem('tg-lang', l); } catch (e) {} location.reload(); },
+    apply() {
+      document.documentElement.lang = lang;
+      if (lang === 'ko') return;
+      document.title = tx(document.title);
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n; (n = w.nextNode());) {
+        const p = n.parentNode && n.parentNode.nodeName;
+        if (p === 'SCRIPT' || p === 'STYLE') continue;
+        const k = n.nodeValue.trim().replace(/\s+/g, ' ');
+        const t = k && look(k);
+        if (t) n.nodeValue = n.nodeValue.replace(n.nodeValue.trim(), t);
+      }
+      document.querySelectorAll('[placeholder],[aria-label]').forEach(el => {
+        for (const a of ['placeholder', 'aria-label']) { const v = el.getAttribute(a); const t = v && look(v); if (t) el.setAttribute(a, t); }
+      });
+    }
+  };
+})();
+</script></head><body><title>워치노트</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: instrument panel — controls left, readout + chart-paper trace right; stacks on phones */
@@ -22,6 +69,8 @@
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:24px 48px}
 .wrap{max-width:1040px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#lang{width:auto;font-size:.85rem;padding:5px 8px}
 header h1{font-size:1.6rem;font-weight:600;margin:0;letter-spacing:-0.01em;text-wrap:balance}
 header p{margin:4px 0 0;color:var(--muted);max-width:62ch}
 .grid{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
@@ -112,6 +161,7 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 <div class="wrap">
   <header>
     <h1>워치노트 <span class="chip ok" id="proTag" hidden>프로</span></h1>
+    <select id="lang" aria-label="Language"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option></select>
   </header>
   <nav class="tabs" role="tablist"><button class="tab" role="tab" id="tMeasure" type="button" aria-selected="true">측정</button><button class="tab" role="tab" id="tLib" type="button" aria-selected="false">시계 보관함</button></nav>
 
@@ -159,12 +209,12 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
       <div class="field">
         <label for="pos">자세</label>
         <select id="pos">
-          <option>다이얼 위</option>
-          <option>다이얼 아래</option>
-          <option>9시 아래 (용두 위)</option>
-          <option>3시 아래 (용두 아래)</option>
-          <option>6시 아래</option>
-          <option>12시 아래</option>
+          <option value="다이얼 위">다이얼 위</option>
+          <option value="다이얼 아래">다이얼 아래</option>
+          <option value="9시 아래 (용두 위)">9시 아래 (용두 위)</option>
+          <option value="3시 아래 (용두 아래)">3시 아래 (용두 아래)</option>
+          <option value="6시 아래">6시 아래</option>
+          <option value="12시 아래">12시 아래</option>
         </select>
       </div>
       <div class="two">
@@ -439,18 +489,18 @@ const TG = (() => {
   function analyze(x, sr, opts) {
     const la = opts.la || 52;
     const dur = x.length / sr;
-    if (dur < 8) throw new Error('녹음이 너무 짧습니다. 최소 10초, 권장 30~60초로 녹음해 주세요.');
+    if (dur < 8) throw new Error(TX`녹음이 너무 짧습니다. 최소 10초, 권장 30~60초로 녹음해 주세요.`);
 
     const y = highpass(highpass(x, sr, 2000), sr, 2000);
     const env = envelope(y, sr, 0.0003);
     const floor = percentile(env, 0.5, 5);
     const top = percentile(env, 0.998, 5);
-    if (!(top > floor * 2.5)) throw new Error('틱 소리를 찾지 못했습니다. 더 조용한 곳에서, 시계를 마이크에 더 가까이 대고 녹음해 주세요.');
+    if (!(top > floor * 2.5)) throw new Error(TX`틱 소리를 찾지 못했습니다. 더 조용한 곳에서, 시계를 마이크에 더 가까이 대고 녹음해 주세요.`);
     const thr = floor + 0.3 * (top - floor);
 
     // pass 1: coarse, to estimate beat period
     let on = detect(env, sr, Math.round(0.03 * sr), thr);
-    if (on.length < 20) throw new Error('잡힌 틱이 너무 적습니다. 마이크에 시계를 밀착하고 다시 녹음해 주세요.');
+    if (on.length < 20) throw new Error(TX`잡힌 틱이 너무 적습니다. 마이크에 시계를 밀착하고 다시 녹음해 주세요.`);
     const iv = [];
     for (let i = 1; i < on.length; i++) {
       const d = on[i] - on[i - 1];
@@ -482,7 +532,7 @@ const TG = (() => {
     let keepT = ts.slice(), keepN = ns.slice(), f = null;
     for (let it = 0; it < 4; it++) {
       f = fit(keepT, keepN);
-      if (!f) throw new Error('분석에 실패했습니다. 다시 녹음해 주세요.');
+      if (!f) throw new Error(TX`분석에 실패했습니다. 다시 녹음해 주세요.`);
       const r = residuals(f, keepT, keepN);
       const mad = median(r.map(Math.abs)) * 1.4826;
       const lim = Math.max(4 * mad, 0.0003);
@@ -491,7 +541,7 @@ const TG = (() => {
       if (nt.length === keepT.length) break;
       keepT = nt; keepN = nn;
     }
-    if (keepT.length < 30) throw new Error('일정한 틱을 충분히 찾지 못했습니다. bph 설정을 확인하거나 다시 녹음해 주세요.');
+    if (keepT.length < 30) throw new Error(TX`일정한 틱을 충분히 찾지 못했습니다. bph 설정을 확인하거나 다시 녹음해 주세요.`);
     f = fit(keepT, keepN);
     const res = residuals(f, keepT, keepN);
     const sd = Math.sqrt(res.reduce((s, v) => s + v * v, 0) / res.length);
@@ -575,7 +625,7 @@ const TG = (() => {
   function analyzeFold(x, sr, opts) {
     const la = opts.la || 52;
     const dur = x.length / sr;
-    if (dur < 12) throw new Error('녹음이 짧습니다. 최소 12~16초, 권장 60초 이상 재 주세요.');
+    if (dur < 12) throw new Error(TX`녹음이 짧습니다. 최소 12~16초, 권장 60초 이상 재 주세요.`);
     const y = highpass(highpass(x, sr, 2000), sr, 2000);
     // energy envelope, downsampled to ~8 kHz, outliers clipped
     const blk = Math.max(1, Math.round(sr / 4000)), fs = sr / blk;
@@ -606,7 +656,7 @@ const TG = (() => {
     const segS = Math.max(2, Math.min(4, 24 * T0));
     const segN = Math.round(segS * fs);
     const nSeg = Math.floor(n / segN);
-    if (nSeg < 4) throw new Error('녹음이 짧아 아직 계산할 수 없습니다. 조금 더 재 주세요.');
+    if (nSeg < 4) throw new Error(TX`녹음이 짧아 아직 계산할 수 없습니다. 조금 더 재 주세요.`);
 
     // pass 0: coarse search over rate (±400 s/d) for the sharpest folded profile
     const iEnd = nSeg * segN;
@@ -642,7 +692,7 @@ const TG = (() => {
       }
       // weighted line fit, dropping poorly correlated segments
       const idx = tc.map((_, i) => i).filter(i => cr[i] > 0.05);
-      if (idx.length < 4) throw new Error('틱 소리를 찾지 못했습니다. 시계 옆면을 마이크 구멍에 바로 대고 다시 측정해 주세요.');
+      if (idx.length < 4) throw new Error(TX`틱 소리를 찾지 못했습니다. 시계 옆면을 마이크 구멍에 바로 대고 다시 측정해 주세요.`);
       let sx = 0, sy = 0, sxx = 0, sxy = 0;
       for (const i of idx) { sx += tc[i]; sy += sh[i]; sxx += tc[i] * tc[i]; sxy += tc[i] * sh[i]; }
       const k = idx.length, m = (k * sxy - sx * sy) / (k * sxx - sx * sx), b0 = (sy - m * sx) / k;
@@ -797,7 +847,7 @@ const TG = (() => {
     const method = opts.method || 'auto';
     const r = analyzeTpl(x, sr, opts);
     if (method === 'tick' && r.snr < 25) {
-      const e = new Error('틱 소리가 약해 정확히 재기 어렵습니다. 시계 옆면을 마이크 구멍에 바로 대고 조용한 곳에서 다시 재 주세요.');
+      const e = new Error(TX`틱 소리가 약해 정확히 재기 어렵습니다. 시계 옆면을 마이크 구멍에 바로 대고 조용한 곳에서 다시 재 주세요.`);
       e.weak = true; throw e;
     }
     return r;
@@ -839,12 +889,15 @@ const TG = (() => {
 <script>
 (() => {
   const $ = id => document.getElementById(id);
+  I18N.apply();
+  $('lang').value = I18N.lang;
+  $('lang').addEventListener('change', () => { if (live) stopLive(false); I18N.set($('lang').value); });
   // ---- pro (Google Play in-app purchase; every feature is open outside the store build) ----
   const BILL = window.AndroidBilling || null;
   let pro = !BILL, proPrice = '';
   try { if (BILL) { pro = !!BILL.isPro(); proPrice = BILL.price() || ''; } } catch (e) {}
   const FREE_WATCHES = 1, FREE_LOGS = 5;
-  const weakHint = () => (BILL && !pro) ? ' 케이스가 두꺼워 조용한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.' : '';
+  const weakHint = () => (BILL && !pro) ? TX` 케이스가 두꺼워 조용한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.` : '';
   function upsell(msg) {
     if (!BILL || pro) return;
     showTab('measure'); $('proMsg').textContent = msg; $('proMsg').classList.remove('err');
@@ -855,12 +908,13 @@ const TG = (() => {
     $('proTag').hidden = !(BILL && pro);
     $('proPrice').textContent = proPrice;
     $('proPrice').hidden = !proPrice;
-    $('method').options[0].textContent = pro ? '자동 (약한 신호도 계산)' : '자동 (또렷한 신호만 · 약한 신호는 프로)';
+    $('method').options[0].textContent = pro ? TX`자동 (약한 신호도 계산)` : TX`자동 (또렷한 신호만 · 약한 신호는 프로)`;
     try { renderLog(); } catch (e) {}
   }
   window.__billing = s => {
     if (s && 'pro' in s && s.pro !== null) pro = !!s.pro;
     if (s && s.price) proPrice = s.price;
+    if (s && s.msg) s.msg = tx(s.msg);
     if (s && s.msg) { $('proMsg').textContent = s.msg; $('proMsg').classList.toggle('err', !!s.err); setStatus(s.msg, !!s.err); }
     updateProUI();
   };
@@ -921,7 +975,7 @@ const TG = (() => {
   function drawShape(r) {
     const { g, w, h } = setupCanvas($('shape'));
     g.clearRect(0, 0, w, h);
-    if (!r.shape) { $('shapeNote').textContent = '파형 없음'; return; }
+    if (!r.shape) { $('shapeNote').textContent = TX`파형 없음`; return; }
     const s = r.shape, sm = s.sm, B = 20, Tp = 8;
     const M = Math.max(...sm);
     const X = j => (j / (sm.length - 1)) * w;
@@ -944,7 +998,7 @@ const TG = (() => {
       for (const j of [s.start, s.drop]) { g.beginPath(); g.moveTo(X(j), Tp); g.lineTo(X(j), h - B); g.stroke(); }
       g.setLineDash([]);
     }
-    $('shapeNote').textContent = r.liftMs ? `언락 → 드롭 ${r.liftMs.toFixed(2)} ms` : '드롭 소리 구분 불가';
+    $('shapeNote').textContent = r.liftMs ? TX`언락 → 드롭 ${r.liftMs.toFixed(2)} ms` : TX`드롭 소리 구분 불가`;
   }
 
   function niceStep(x) { const p = Math.pow(10, Math.floor(Math.log10(x))); const m = x / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; }
@@ -962,32 +1016,32 @@ const TG = (() => {
     const pm = r.rateErr > 0 ? Math.max(0.1, r.rateErr) : null;
     const rough = !shaky && pm !== null && pm > 1.5;
     $('rate').classList.toggle('rough', rough);
-    $('rate').innerHTML = shaky ? `불안정<small>신호 약함</small>`
-      : `${fmtRate(r.rate)}<small>${pm !== null ? `± ${pm < 10 ? pm.toFixed(1) : pm.toFixed(0)} ` : ''}초/일${rough ? ' · 예비값' : ''}</small>`;
+    $('rate').innerHTML = shaky ? TX`불안정<small>신호 약함</small>`
+      : TX`${fmtRate(r.rate)}<small>${pm !== null ? `± ${pm < 10 ? pm.toFixed(1) : pm.toFixed(0)} ` : ''}초/일${rough ? TX` · 예비값` : ''}</small>`;
     const chips = [];
     const metas = r.rate >= 0 && r.rate <= 5, cosc = r.rate >= -4 && r.rate <= 6;
-    chips.push(`<span class="chip ${metas ? 'ok' : 'bad'}">METAS 0~+5 ${metas ? '이내' : '벗어남'}</span>`);
-    chips.push(`<span class="chip ${cosc ? 'ok' : 'bad'}">COSC −4~+6 ${cosc ? '이내' : '벗어남'}</span>`);
+    chips.push(`<span class="chip ${metas ? 'ok' : 'bad'}">METAS 0~+5 ${metas ? TX`이내` : TX`벗어남`}</span>`);
+    chips.push(`<span class="chip ${cosc ? 'ok' : 'bad'}">COSC −4~+6 ${cosc ? TX`이내` : TX`벗어남`}</span>`);
     $('chips').innerHTML = shaky || rough ? '' : chips.join('');
     $('amp').textContent = r.amp ? Math.round(r.amp) + '°' : '—';
     $('be').textContent = r.beatErr.toFixed(1) + ' ms';
     $('bphOut').textContent = r.bph.toLocaleString('en-US');
-    $('ticksLbl').textContent = fold || tpl ? '신호 대 잡음비' : '사용한 틱';
+    $('ticksLbl').textContent = fold || tpl ? TX`신호 대 잡음비` : TX`사용한 틱`;
     $('ticks').textContent = fold || tpl ? r.snr.toFixed(0) : r.used;
     $('traceLegend').innerHTML = fold && !tpl
-      ? '<span><i class="dot" style="background:var(--tic)"></i>구간별 위치</span><span>위로 기울면 빠름</span>'
-      : '<span><i class="dot" style="background:var(--tic)"></i>짝수 틱</span><span><i class="dot" style="background:var(--toc)"></i>홀수 틱</span><span>위로 기울면 빠름</span>';
+      ? TX`<span><i class="dot" style="background:var(--tic)"></i>구간별 위치</span><span>위로 기울면 빠름</span>`
+      : TX`<span><i class="dot" style="background:var(--tic)"></i>짝수 틱</span><span><i class="dot" style="background:var(--toc)"></i>홀수 틱</span><span>위로 기울면 빠름</span>`;
     const q = [];
     if (fold || tpl) {
-      q.push(`${fold ? '약한 신호 모드: ' : ''}${r.dur.toFixed(0)}초 녹음을 ${r.segments}개 구간으로 나눠 박자 간격으로 겹쳐 계산했습니다.`);
-      if (shaky) q.push(`신호 대 잡음비가 ${r.snr.toFixed(1)}로 낮아(6 이상 필요) 결과를 믿기 어렵습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 옆면을 마이크 구멍에 바로 대고 더 조용한 곳에서 재 주세요.`);
-    } else q.push(`${r.dur.toFixed(0)}초 녹음에서 틱 ${r.detected}개를 찾아 ${r.used}개를 계산에 썼습니다.`);
-    if (shaky && !fold && !tpl && !pro) q.push('케이스가 두꺼워 틱이 약한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.');
-    if (shaky && !fold && !tpl) q.push(`예상 틱 ${Math.round(expect)}개 중 ${r.used}개만 일정하게 잡혔습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 뒷판을 폰 아래쪽 마이크 구멍에 바로 붙이고, 주변 소음을 줄여 주세요.`);
-    if (!fold && r.sdMs > 0.6) q.push('틱 간격이 고르지 않아 결과가 흔들릴 수 있습니다. 더 조용한 곳에서 다시 재 보세요.');
-    if (r.bph !== r.bphAuto) q.push(`소리로 추정한 bph는 ${r.bphAuto}입니다. 설정값을 확인하세요.`);
-    if (!r.amp) q.push('진폭은 계산하지 않았습니다. 평균 틱 파형에서 큰 소리(드롭) 앞의 작은 소리(언락)가 잡히지 않았거나, 계산값이 130~370° 범위를 벗어났습니다.');
-    if (r.beatErr > 1.0) q.push('비트 에러가 1 ms를 넘습니다. 여러 번 재서 같으면 점검 때 언급할 만합니다.');
+      q.push(TX`${fold ? TX`약한 신호 모드: ` : ''}${r.dur.toFixed(0)}초 녹음을 ${r.segments}개 구간으로 나눠 박자 간격으로 겹쳐 계산했습니다.`);
+      if (shaky) q.push(TX`신호 대 잡음비가 ${r.snr.toFixed(1)}로 낮아(6 이상 필요) 결과를 믿기 어렵습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 옆면을 마이크 구멍에 바로 대고 더 조용한 곳에서 재 주세요.`);
+    } else q.push(TX`${r.dur.toFixed(0)}초 녹음에서 틱 ${r.detected}개를 찾아 ${r.used}개를 계산에 썼습니다.`);
+    if (shaky && !fold && !tpl && !pro) q.push(TX`케이스가 두꺼워 틱이 약한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.`);
+    if (shaky && !fold && !tpl) q.push(TX`예상 틱 ${Math.round(expect)}개 중 ${r.used}개만 일정하게 잡혔습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 뒷판을 폰 아래쪽 마이크 구멍에 바로 붙이고, 주변 소음을 줄여 주세요.`);
+    if (!fold && r.sdMs > 0.6) q.push(TX`틱 간격이 고르지 않아 결과가 흔들릴 수 있습니다. 더 조용한 곳에서 다시 재 보세요.`);
+    if (r.bph !== r.bphAuto) q.push(TX`소리로 추정한 bph는 ${r.bphAuto}입니다. 설정값을 확인하세요.`);
+    if (!r.amp) q.push(TX`진폭은 계산하지 않았습니다. 평균 틱 파형에서 큰 소리(드롭) 앞의 작은 소리(언락)가 잡히지 않았거나, 계산값이 130~370° 범위를 벗어났습니다.`);
+    if (r.beatErr > 1.0) q.push(TX`비트 에러가 1 ms를 넘습니다. 여러 번 재서 같으면 점검 때 언급할 만합니다.`);
     $('quality').textContent = q.join(' ');
     $('save').disabled = isSample;
     drawTrace(r); drawShape(r);
@@ -1014,9 +1068,9 @@ const TG = (() => {
   function fillWatches(sel) {
     const s = $('watch'); s.innerHTML = '';
     const add = (v, txt) => { const o = document.createElement('option'); o.value = v; o.textContent = txt; s.appendChild(o); };
-    add('', watches.length ? '선택 안 함' : '등록된 시계 없음');
+    add('', watches.length ? TX`선택 안 함` : TX`등록된 시계 없음`);
     watches.forEach(w => add(w.id, w.name));
-    add('__add', '＋ 새 시계 추가');
+    add('__add', TX`＋ 새 시계 추가`);
     s.value = sel && (sel === '' || watches.some(w => w.id === sel)) ? sel : (watches[0] ? watches[0].id : '');
     applyWatch();
     try { renderLog(); } catch (e) {}  // the log (and library) may not exist yet during start-up
@@ -1024,13 +1078,13 @@ const TG = (() => {
   function applyWatch() {
     const w = curWatch();
     $('wEdit').hidden = $('wDel').hidden = !w;
-    $('wDel').textContent = '삭제';
+    $('wDel').textContent = TX`삭제`;
     if (w) { $('bph').value = w.bph; $('la').value = w.la; }
     try { localStorage.setItem('tg-cur-watch', $('watch').value); } catch (e) {}
   }
   function openForm(w) {
     editing = w;
-    $('wFormTitle').textContent = w ? '시계 편집' : '새 시계 추가';
+    $('wFormTitle').textContent = w ? TX`시계 편집` : TX`새 시계 추가`;
     $('wName').value = w ? w.name : '';
     $('wMov').value = w && w.mov ? w.mov : '';
     $('wBph').value = w ? w.bph : 'auto';
@@ -1050,7 +1104,7 @@ const TG = (() => {
     applyWatch();
   });
   function addWatch() {
-    if (!pro && watches.length >= FREE_WATCHES) { upsell(`무료 버전은 시계를 ${FREE_WATCHES}개까지 등록할 수 있습니다.`); return; }
+    if (!pro && watches.length >= FREE_WATCHES) { upsell(TX`무료 버전은 시계를 ${FREE_WATCHES}개까지 등록할 수 있습니다.`); return; }
     showTab('measure'); openForm(null); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   $('libAdd').addEventListener('click', addWatch);
@@ -1058,16 +1112,16 @@ const TG = (() => {
   let delArmed = false;
   $('wDel').addEventListener('click', () => {
     const w = curWatch(); if (!w) return;
-    if (!delArmed) { delArmed = true; $('wDel').textContent = '한 번 더 누르면 삭제'; setTimeout(() => { delArmed = false; $('wDel').textContent = '삭제'; }, 3000); return; }
+    if (!delArmed) { delArmed = true; $('wDel').textContent = TX`한 번 더 누르면 삭제`; setTimeout(() => { delArmed = false; $('wDel').textContent = TX`삭제`; }, 3000); return; }
     delArmed = false; watches = watches.filter(x => x.id !== w.id); saveWatches();
     if (logFilter === w.id) logFilter = null;
     fillWatches('');
-    setStatus(`'${w.name}'을(를) 목록에서 지웠습니다. 저장된 측정 기록은 남아 있습니다.`);
+    setStatus(TX`'${w.name}'을(를) 목록에서 지웠습니다. 저장된 측정 기록은 남아 있습니다.`);
   });
   $('wCancel').addEventListener('click', () => { $('wForm').hidden = true; editing = null; });
   $('wSave').addEventListener('click', () => {
     const name = $('wName').value.trim();
-    if (!name) { $('wName').focus(); setStatus('시계 이름을 입력해 주세요.', true); return; }
+    if (!name) { $('wName').focus(); setStatus(TX`시계 이름을 입력해 주세요.`, true); return; }
     const data = { name, mov: $('wMov').value, bph: $('wBph').value, la: Math.min(60, Math.max(38, +$('wLa').value || 52)), stamp: $('wStamp').value || '' };
     let id;
     if (editing) {
@@ -1079,13 +1133,13 @@ const TG = (() => {
     }
     else { id = 'w' + Date.now(); watches.push(Object.assign({ id }, data)); }
     saveWatches(); $('wForm').hidden = true; editing = null; fillWatches(id);
-    setStatus(`'${name}'을(를) 저장했습니다.`);
+    setStatus(TX`'${name}'을(를) 저장했습니다.`);
   });
 
   $('file').addEventListener('change', async e => {
     const f = e.target.files[0];
     if (!f) return;
-    setStatus(`'${f.name}' 분석 중…`);
+    setStatus(TX`'${f.name}' 분석 중…`);
     await new Promise(r => setTimeout(r, 30));
     try {
       const { x, sr } = await decode(f);
@@ -1093,10 +1147,10 @@ const TG = (() => {
       const r = TG.measure(x, sr, opts());
       r.file = f.name;
       render(r, false);
-      setStatus(`'${f.name}' 분석 완료`);
+      setStatus(TX`'${f.name}' 분석 완료`);
     } catch (err) {
-      const known = err && err.message && /[가-힣]/.test(err.message);
-      setStatus(known ? err.message + weakHint() : '이 파일을 읽지 못했습니다. m4a, mp3, wav 녹음 파일로 다시 시도해 주세요.', true);
+      const known = err && err.name === 'Error' && err.message;
+      setStatus(known ? err.message + weakHint() : TX`이 파일을 읽지 못했습니다. m4a, mp3, wav 녹음 파일로 다시 시도해 주세요.`, true);
     }
     e.target.value = '';
   });
@@ -1134,38 +1188,39 @@ const TG = (() => {
       const c = el('article', 'card');
       c.appendChild(el('h3', null, w.name));
       const mv = movName(w.mov);
-      c.appendChild(el('div', 'sub', `${mv ? mv + ' · ' : ''}${w.bph === 'auto' ? 'bph 자동' : (+w.bph).toLocaleString('en-US') + ' bph'} · 리프트 앵글 ${w.la}°`));
+      c.appendChild(el('div', 'sub', TX`${mv ? mv + ' · ' : ''}${w.bph === 'auto' ? TX`bph 자동` : (+w.bph).toLocaleString('en-US') + ' bph'} · 리프트 앵글 ${w.la}°`));
       if (w.stamp) {
         const sd = new Date(w.stamp + 'T00:00:00'), now = new Date();
         let mo = (now.getFullYear() - sd.getFullYear()) * 12 + now.getMonth() - sd.getMonth() - (now.getDate() < sd.getDate() ? 1 : 0);
         const days = Math.floor((now - sd) / 864e5);
-        const age = days < 0 ? '' : mo < 1 ? ` · ${days + 1}일째` : mo < 12 ? ` · ${mo}개월째` : ` · ${Math.floor(mo / 12)}년${mo % 12 ? ' ' + (mo % 12) + '개월' : ''}째`;
-        c.appendChild(el('div', 'sub', `스탬핑 ${w.stamp.replace(/-/g, '.')}${age}`));
+        const yr = Math.floor(mo / 12), rm = mo % 12;
+        const age = days < 0 ? '' : mo < 1 ? TX` · ${days + 1}일째` : mo < 12 ? TX` · ${mo}개월째` : rm ? TX` · ${yr}년 ${rm}개월째` : TX` · ${yr}년째`;
+        c.appendChild(el('div', 'sub', TX`스탬핑 ${w.stamp.replace(/-/g, '.')}${age}`));
       }
       const lastR = recs[recs.length - 1];
       if (lastR) {
         const now = el('div', 'now', fmtRate(lastR.rate));
-        now.appendChild(el('small', null, `${lastR.rateErr ? '± ' + Math.max(0.1, lastR.rateErr).toFixed(1) + ' ' : ''}초/일 · ${lastR.pos}`));
+        now.appendChild(el('small', null, TX`${lastR.rateErr ? '± ' + Math.max(0.1, lastR.rateErr).toFixed(1) + ' ' : ''}초/일 · ${tx(lastR.pos)}`));
         c.appendChild(now);
-        c.appendChild(el('div', 'sub', `최근 ${fmtDate(lastR.ts)} · 진폭 ${lastR.amp ? Math.round(lastR.amp) + '°' : '—'} · 비트 에러 ${lastR.be.toFixed(1)} ms · 기록 ${recs.length}회`));
+        c.appendChild(el('div', 'sub', TX`최근 ${fmtDate(lastR.ts)} · 진폭 ${lastR.amp ? Math.round(lastR.amp) + '°' : '—'} · 비트 에러 ${lastR.be.toFixed(1)} ms · 기록 ${recs.length}회`));
         if (pro) {
           const byPos = {};
           recs.forEach(e => (byPos[e.pos] = byPos[e.pos] || []).push(e.rate));
           const chips = el('div', 'chips');
-          Object.keys(byPos).forEach(p => { const v = byPos[p]; chips.appendChild(el('span', 'chip', `${p} ${fmtRate(v.reduce((a, b) => a + b, 0) / v.length)} (${v.length})`)); });
+          Object.keys(byPos).forEach(p => { const v = byPos[p]; chips.appendChild(el('span', 'chip', `${tx(p)} ${fmtRate(v.reduce((a, b) => a + b, 0) / v.length)} (${v.length})`)); });
           c.appendChild(chips);
-        } else c.appendChild(el('div', 'sub', '자세별 평균은 프로 기능입니다.'));
-      } else c.appendChild(el('div', 'sub', '아직 측정 기록이 없습니다.'));
-      const memo = el('textarea'); memo.maxLength = 200; memo.rows = 2; memo.placeholder = '메모 (구입일, 오버홀, 특이사항)'; memo.value = w.memo || '';
-      memo.setAttribute('aria-label', w.name + ' 메모');
+        } else c.appendChild(el('div', 'sub', TX`자세별 평균은 프로 기능입니다.`));
+      } else c.appendChild(el('div', 'sub', TX`아직 측정 기록이 없습니다.`));
+      const memo = el('textarea'); memo.maxLength = 200; memo.rows = 2; memo.placeholder = TX`메모 (구입일, 오버홀, 특이사항)`; memo.value = w.memo || '';
+      memo.setAttribute('aria-label', w.name + TX` 메모`);
       memo.addEventListener('change', () => { w.memo = memo.value.trim(); saveWatches(); });
       c.appendChild(memo);
       const acts = el('div', 'acts');
-      const b1 = el('button', 'btn primary', '이 시계로 측정'); b1.type = 'button';
-      b1.onclick = () => { showTab('measure'); $('watch').value = w.id; applyWatch(); $('setup-h').scrollIntoView({ behavior: 'smooth', block: 'start' }); setStatus(`'${w.name}'을(를) 골랐습니다. 자세를 정하고 측정을 시작하세요.`); };
-      const b2 = el('button', 'btn', `기록 보기 (${recs.length})`); b2.type = 'button';
+      const b1 = el('button', 'btn primary', TX`이 시계로 측정`); b1.type = 'button';
+      b1.onclick = () => { showTab('measure'); $('watch').value = w.id; applyWatch(); $('setup-h').scrollIntoView({ behavior: 'smooth', block: 'start' }); setStatus(TX`'${w.name}'을(를) 골랐습니다. 자세를 정하고 측정을 시작하세요.`); };
+      const b2 = el('button', 'btn', TX`기록 보기 (${recs.length})`); b2.type = 'button';
       b2.onclick = () => { logFilter = w.id; renderLog(); $('logPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-      const b3 = el('button', 'btn', '편집'); b3.type = 'button';
+      const b3 = el('button', 'btn', TX`편집`); b3.type = 'button';
       b3.onclick = () => { showTab('measure'); openForm(w); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
       acts.append(b1, b2, b3); c.appendChild(acts);
       box.appendChild(c);
@@ -1181,7 +1236,7 @@ const TG = (() => {
     $('logF').hidden = $('logAll').hidden = !fw;
     if (fw) $('logF').textContent = fw.name;
     $('log').hidden = !rows.length; $('logEmpty').hidden = !!rows.length; $('clear').hidden = !log.length;
-    $('logEmpty').textContent = fw ? '이 시계로 저장한 측정이 아직 없습니다.' : '아직 저장된 측정이 없습니다. 파일을 분석한 뒤 \'기록에 저장\'을 누르면 여기에 쌓입니다.';
+    $('logEmpty').textContent = fw ? TX`이 시계로 저장한 측정이 아직 없습니다.` : TX`아직 저장된 측정이 없습니다. 파일을 분석한 뒤 '기록에 저장'을 누르면 여기에 쌓입니다.`;
     renderLibrary();
     // free: every record is kept, only the latest few are shown (an upgrade brings the rest back)
     (pro ? rows : rows.slice(-FREE_LOGS)).slice().reverse().forEach(e => {
@@ -1189,14 +1244,14 @@ const TG = (() => {
       const d = new Date(e.ts);
       const cells = [
         `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
-        e.watch, e.pos
+        tx(e.watch), tx(e.pos)
       ];
       cells.forEach((c, i) => { const td = document.createElement('td'); td.className = ['c-date', 'c-watch', 'c-pos'][i]; td.textContent = c; tr.appendChild(td); });
       [[fmtRate(e.rate) + ' s/d', 'c-rate'], [e.amp ? Math.round(e.amp) + '°' : '—', 'c-amp'], [e.be.toFixed(1) + ' ms', 'c-be']].forEach(([c, k]) => {
         const td = document.createElement('td'); td.className = 'num ' + k; td.textContent = c; tr.appendChild(td);
       });
       const td = document.createElement('td'); td.className = 'c-del'; const b = document.createElement('button');
-      b.className = 'x'; b.type = 'button'; b.textContent = '삭제'; b.setAttribute('aria-label', '이 기록 삭제');
+      b.className = 'x'; b.type = 'button'; b.textContent = TX`삭제`; b.setAttribute('aria-label', TX`이 기록 삭제`);
       b.onclick = () => { log = log.filter(x => x.ts !== e.ts); store(log); renderLog(); };
       td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
     });
@@ -1205,12 +1260,12 @@ const TG = (() => {
     rows.forEach(e => { const k = e.watch + '|' + e.pos; (groups[k] = groups[k] || []).push(e.rate); });
     const keys = Object.keys(groups);
     if (!keys.length) { $('summary').innerHTML = ''; return; }
-    if (!pro) { $('summary').innerHTML = `<p class="hint">자세별 평균과 무제한 기록은 프로 기능입니다. 무료 버전은 최근 ${FREE_LOGS}개만 보여 줍니다${log.length > FREE_LOGS ? ` (저장된 기록 ${log.length}개, 프로로 바꾸면 모두 보임)` : ''}.</p>`; return; }
+    if (!pro) { $('summary').innerHTML = TX`<p class="hint">자세별 평균과 무제한 기록은 프로 기능입니다. 무료 버전은 최근 ${FREE_LOGS}개만 보여 줍니다${log.length > FREE_LOGS ? TX` (저장된 기록 ${log.length}개, 프로로 바꾸면 모두 보임)` : ''}.</p>`; return; }
     const chips = keys.map(k => {
       const v = groups[k], m = v.reduce((a, b) => a + b, 0) / v.length;
       const [w, p] = k.split('|');
       const s = document.createElement('span'); s.className = 'chip';
-      s.textContent = `${w} · ${p}: ${fmtRate(m)} s/d (${v.length}회)`;
+      s.textContent = TX`${tx(w)} · ${tx(p)}: ${fmtRate(m)} s/d (${v.length}회)`;
       return s.outerHTML;
     });
     $('summary').innerHTML = `<div class="chips">${chips.join('')}</div>`;
@@ -1221,25 +1276,25 @@ const TG = (() => {
     log.push({ ts: Date.now(), wid: curWatch() ? curWatch().id : undefined, watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, rateErr: last.rateErr, amp: last.amp, be: last.beatErr, bph: last.bph });
     const ok = store(log); renderLog();
     $('save').disabled = true;
-    setStatus(ok ? '기록에 저장했습니다.' : '이 브라우저에서는 저장할 수 없어 이번 화면에서만 보입니다.', !ok);
+    setStatus(ok ? TX`기록에 저장했습니다.` : TX`이 브라우저에서는 저장할 수 없어 이번 화면에서만 보입니다.`, !ok);
   });
 
   let armed = false;
   $('clear').addEventListener('click', () => {
-    if (!armed) { armed = true; $('clear').textContent = !pro && log.length > FREE_LOGS ? `한 번 더 누르면 저장된 ${log.length}개 모두 삭제` : '한 번 더 누르면 삭제'; setTimeout(() => { armed = false; $('clear').textContent = '전체 삭제'; }, 3000); return; }
-    log = []; store(log); renderLog(); armed = false; $('clear').textContent = '전체 삭제';
+    if (!armed) { armed = true; $('clear').textContent = !pro && log.length > FREE_LOGS ? TX`한 번 더 누르면 저장된 ${log.length}개 모두 삭제` : TX`한 번 더 누르면 삭제`; setTimeout(() => { armed = false; $('clear').textContent = TX`전체 삭제`; }, 3000); return; }
+    log = []; store(log); renderLog(); armed = false; $('clear').textContent = TX`전체 삭제`;
   });
 
   $('proBuy').addEventListener('click', () => {
-    try { BILL.buy(); $('proMsg').textContent = '구글 결제 창을 여는 중…'; }
-    catch (e) { $('proMsg').textContent = '결제 창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
+    try { BILL.buy(); $('proMsg').textContent = TX`구글 결제 창을 여는 중…`; }
+    catch (e) { $('proMsg').textContent = TX`결제 창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.`; }
   });
   updateProUI();
   try { if (BILL) BILL.refresh(); } catch (e) {}
   { let moved = false; log.forEach(e => { if (!e.wid) { const w = watches.find(w => w.name === e.watch); if (w) { e.wid = w.id; moved = true; } } }); if (moved) store(log); }
   let savedSel = ''; try { savedSel = localStorage.getItem('tg-cur-watch') || ''; } catch (e) {}
   fillWatches(savedSel);
-  if (!watches.length) setStatus('먼저 ＋ 새 시계 추가로 내 시계를 등록하면 bph가 자동으로 맞춰지고, 기록이 시계별로 정리됩니다.');
+  if (!watches.length) setStatus(TX`먼저 ＋ 새 시계 추가로 내 시계를 등록하면 bph가 자동으로 맞춰지고, 기록이 시계별로 정리됩니다.`);
   try { const c = localStorage.getItem('tg-cal'); if (c !== null) $('cal').value = c; } catch (e) {}
   $('cal').addEventListener('change', () => {
     try { localStorage.setItem('tg-cal', $('cal').value); } catch (e) {}
@@ -1264,7 +1319,7 @@ const TG = (() => {
     for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.max(-32768, Math.min(32767, Math.round(x[i] * 32767))), true);
     return new Uint8Array(buf);
   }
-  window.__fileSaved = st => setStatus(st === 'ok' ? '녹음 파일을 저장했습니다.' : st === 'cancel' ? '저장을 취소했습니다.' : '녹음 파일을 저장하지 못했습니다.', st === 'fail');
+  window.__fileSaved = st => setStatus(st === 'ok' ? TX`녹음 파일을 저장했습니다.` : st === 'cancel' ? TX`저장을 취소했습니다.` : TX`녹음 파일을 저장하지 못했습니다.`, st === 'fail');
   $('wav').addEventListener('click', () => {
     if (!lastRec) return;
     const d = new Date(lastRec.ts), p2 = n => String(n).padStart(2, '0');
@@ -1274,7 +1329,7 @@ const TG = (() => {
     if (window.AndroidRec && window.AndroidRec.saveWav) {
       let b = '';
       for (let i = 0; i < bytes.length; i += 0x8000) b += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-      setStatus('저장할 위치를 고르세요…');
+      setStatus(TX`저장할 위치를 고르세요…`);
       try { window.AndroidRec.saveWav(btoa(b), name); } catch (e) { window.__fileSaved('fail'); }
     } else {
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes], { type: 'audio/wav' })); a.download = name;
@@ -1294,23 +1349,23 @@ const TG = (() => {
       L.stream.getTracks().forEach(t => t.stop());
       try { L.ac.close(); } catch (e) {}
     }
-    $('liveBtn').textContent = '실시간 측정 시작';
+    $('liveBtn').textContent = TX`실시간 측정 시작`;
     $('pick').classList.remove('disabled');
     if (final && L.len) { lastRec = { x: L.buf.subarray(0, L.len), sr: L.sr, ts: Date.now() }; $('wav').hidden = false; }
     if (final) {
       try {
         const r = TG.measure(L.buf.subarray(0, L.len), L.sr, opts());
         render(r, false);
-        setStatus(`측정 완료 · ${(L.len / L.sr).toFixed(0)}초 전체로 계산했습니다.`);
+        setStatus(TX`측정 완료 · ${(L.len / L.sr).toFixed(0)}초 전체로 계산했습니다.`);
       } catch (err) { setStatus(err.message + weakHint(), true); $('save').disabled = true; }
-    } else setStatus('측정을 멈췄습니다.');
+    } else setStatus(TX`측정을 멈췄습니다.`);
   }
   // native Android recorder: raw PCM straight from the mic at the ADC's own clock
   function startNative() {
     let sr = -2;
     try { sr = window.AndroidRec.start(); } catch (e) {}
-    if (sr === -1) { setStatus('마이크 권한을 허용한 뒤 다시 눌러 주세요. 허용 창이 뜨지 않으면 휴대폰 설정 > 애플리케이션 > 워치노트 > 권한에서 마이크를 허용해 주세요.', true); return; }
-    if (!(sr > 0)) { setStatus('마이크를 열지 못했습니다. 통화나 녹음 중인 다른 앱이 있는지 확인해 주세요.', true); return; }
+    if (sr === -1) { setStatus(TX`마이크 권한을 허용한 뒤 다시 눌러 주세요. 허용 창이 뜨지 않으면 휴대폰 설정 > 애플리케이션 > 워치노트 > 권한에서 마이크를 허용해 주세요.`, true); return; }
+    if (!(sr > 0)) { setStatus(TX`마이크를 열지 못했습니다. 통화나 녹음 중인 다른 앱이 있는지 확인해 주세요.`, true); return; }
     const L = { native: true, sr, buf: new Float32Array(Math.ceil(sr * LIVE_MAX) + 8192), len: 0, gaps: 0, mode: 'native' };
     window.__recData = b64 => {
       if (live !== L) return;
@@ -1329,8 +1384,8 @@ const TG = (() => {
     const sr = L.sr;
     live = L;
     $('save').disabled = true;
-    $('liveBtn').textContent = '측정 멈추기';
-    setStatus('측정 중 0초 · 시계를 마이크에 대고 움직이지 마세요.');
+    $('liveBtn').textContent = TX`측정 멈추기`;
+    setStatus(TX`측정 중 0초 · 시계를 마이크에 대고 움직이지 마세요.`);
     L.timer = setInterval(() => {
       if (live !== L) return;
       const sec = L.len / sr;
@@ -1338,19 +1393,19 @@ const TG = (() => {
       // no audio for 3 s: the mic was taken (call, another app) or recording stopped underneath us
       if (L.len !== L.seen) { L.seen = L.len; L.stall = 0; }
       else if (++L.stall >= 3) {
-        if (sec >= minSec()) { stopLive(true); setStatus($('status').textContent + ' 마이크 입력이 끊겨 여기서 멈췄습니다.', $('status').classList.contains('err')); }
-        else { stopLive(false); setStatus('마이크 입력이 끊겼습니다. 통화 중이거나 다른 앱이 마이크를 쓰고 있는지 확인한 뒤 다시 시작해 주세요.', true); }
+        if (sec >= minSec()) { stopLive(true); setStatus($('status').textContent + TX` 마이크 입력이 끊겨 여기서 멈췄습니다.`, $('status').classList.contains('err')); }
+        else { stopLive(false); setStatus(TX`마이크 입력이 끊겼습니다. 통화 중이거나 다른 앱이 마이크를 쓰고 있는지 확인한 뒤 다시 시작해 주세요.`, true); }
         return;
       }
-      if (sec < minSec()) { setStatus(`측정 중 ${sec.toFixed(0)}초 · ${Math.ceil(minSec())}초부터 결과가 나옵니다.`); return; }
-      if (performance.now() < (L.next || 0)) { setStatus(`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초`); return; }
+      if (sec < minSec()) { setStatus(TX`측정 중 ${sec.toFixed(0)}초 · ${Math.ceil(minSec())}초부터 결과가 나옵니다.`); return; }
+      if (performance.now() < (L.next || 0)) { setStatus(TX`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초`); return; }
       try {
         const t0 = performance.now();
         const r = TG.measure(L.buf.subarray(0, L.len), sr, opts());
         L.next = performance.now() + Math.max(0, 3 * (performance.now() - t0));
         render(r, false); $('save').disabled = true;
-        setStatus(`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초 · ${r.mode === 'fold' ? '약한 신호' : '개별 틱'} · ${L.mode === 'native' ? 'N' : L.mode === 'worklet' ? 'A' : 'S'}${sr / 1000}k${L.gaps ? ' · 끊김 ' + L.gaps : ''}`);
-      } catch (err) { setStatus(`측정 중 ${sec.toFixed(0)}초 · ${err.message}`); }
+        setStatus(TX`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초 · ${r.mode === 'fold' ? TX`약한 신호` : TX`개별 틱`} · ${L.mode === 'native' ? 'N' : L.mode === 'worklet' ? 'A' : 'S'}${sr / 1000}k${L.gaps ? TX` · 끊김 ` + L.gaps : ''}`);
+      } catch (err) { setStatus(TX`측정 중 ${sec.toFixed(0)}초 · ${err.message}`); }
     }, 1000);
   }
   async function startLive() {
@@ -1359,7 +1414,7 @@ const TG = (() => {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
     } catch (e) {
-      setStatus('마이크를 쓸 수 없습니다. 휴대폰 설정 > 애플리케이션 > 워치노트 > 권한에서 마이크를 허용해 주세요.', true);
+      setStatus(TX`마이크를 쓸 수 없습니다. 휴대폰 설정 > 애플리케이션 > 워치노트 > 권한에서 마이크를 허용해 주세요.`, true);
       return;
     }
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -1408,7 +1463,7 @@ const TG = (() => {
   if (APP) {
     $('liveBtn').hidden = false;
     $('pick').classList.remove('primary');
-    $('log-h').textContent = '측정 기록 · 이 휴대폰에만 저장';
+    $('log-h').textContent = TX`측정 기록 · 이 휴대폰에만 저장`;
     $('liveBtn').addEventListener('click', () => live ? stopLive(true) : startLive());
     document.addEventListener('visibilitychange', () => { if (document.hidden && live) stopLive(false); });
   }
