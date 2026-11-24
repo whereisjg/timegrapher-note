@@ -100,6 +100,12 @@ public class NativeRec {
         act.runOnUiThread(new Runnable() { public void run() { act.createFile(data, name, "audio/wav"); } });
     }
 
+    /** The measuring sheet opened or closed (Back closes it while it is up). */
+    @JavascriptInterface
+    public void sheet(final boolean open) {
+        act.runOnUiThread(new Runnable() { public void run() { act.setSheetOpen(open); } });
+    }
+
     @JavascriptInterface
     public synchronized void stop() {
         running = false;

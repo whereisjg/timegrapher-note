@@ -24,6 +24,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -36,6 +38,8 @@ public class MainActivity extends Activity {
     private NativeRec rec;
     private Billing billing;
     private byte[] pendingFile;   // waiting for the user to pick where to save it
+    private boolean sheetOpen;    // the measuring sheet is up: Back closes it instead of leaving the app
+    private Object backCb;        // OnBackInvokedCallback on Android 13+ (Object so older phones never load the class)
 
     @Override
     protected void onCreate(Bundle b) {
@@ -209,6 +213,28 @@ public class MainActivity extends Activity {
             fileCb.onReceiveValue(r);
             fileCb = null;
         }
+    }
+
+    /** Called by the page when the measuring sheet opens or closes. */
+    void setSheetOpen(boolean open) {
+        sheetOpen = open;
+        if (Build.VERSION.SDK_INT < 33) return;
+        OnBackInvokedDispatcher d = getOnBackInvokedDispatcher();
+        if (open && backCb == null) {
+            OnBackInvokedCallback cb = this::sheetBack;
+            d.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, cb);
+            backCb = cb;
+        } else if (!open && backCb != null) {
+            d.unregisterOnBackInvokedCallback((OnBackInvokedCallback) backCb);
+            backCb = null;
+        }
+    }
+
+    private void sheetBack() { web.evaluateJavascript("window.__back&&window.__back()", null); }
+
+    @Override
+    public void onBackPressed() {   // Android 12 and older
+        if (sheetOpen) sheetBack(); else super.onBackPressed();
     }
 
     @Override
