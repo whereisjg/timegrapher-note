@@ -1138,7 +1138,8 @@ const TG = (() => {
       if (w.stamp) {
         const sd = new Date(w.stamp + 'T00:00:00'), now = new Date();
         let mo = (now.getFullYear() - sd.getFullYear()) * 12 + now.getMonth() - sd.getMonth() - (now.getDate() < sd.getDate() ? 1 : 0);
-        const age = mo < 0 ? '' : mo < 12 ? ` · ${mo}개월째` : ` · ${Math.floor(mo / 12)}년${mo % 12 ? ' ' + (mo % 12) + '개월' : ''}째`;
+        const days = Math.floor((now - sd) / 864e5);
+        const age = days < 0 ? '' : mo < 1 ? ` · ${days + 1}일째` : mo < 12 ? ` · ${mo}개월째` : ` · ${Math.floor(mo / 12)}년${mo % 12 ? ' ' + (mo % 12) + '개월' : ''}째`;
         c.appendChild(el('div', 'sub', `스탬핑 ${w.stamp.replace(/-/g, '.')}${age}`));
       }
       const lastR = recs[recs.length - 1];
