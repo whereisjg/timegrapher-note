@@ -64,13 +64,28 @@ public class NativeRec {
         return sr;
     }
 
-    /** Bluetooth earbuds would otherwise take over the input; the watch sits on the phone's own mic. */
+    /**
+     * Bluetooth earbuds or a headset would otherwise take over the input; the watch sits on the phone's own mic.
+     * Only steps in when such a headset is connected, so the system's usual (bottom) mic stays the default,
+     * and then prefers the built-in mic reported as "bottom" on phones that list several.
+     */
     private void preferBuiltInMic(AudioRecord r) {
         try {
             AudioManager am = (AudioManager) act.getSystemService(Context.AUDIO_SERVICE);
+            AudioDeviceInfo builtin = null;
+            boolean headset = false;
             for (AudioDeviceInfo d : am.getDevices(AudioManager.GET_DEVICES_INPUTS)) {
-                if (d.getType() == AudioDeviceInfo.TYPE_BUILTIN_MIC) { r.setPreferredDevice(d); return; }
+                int t = d.getType();
+                if (t == AudioDeviceInfo.TYPE_BUILTIN_MIC) {
+                    String a = d.getAddress();
+                    if (builtin == null || (a != null && a.toLowerCase().contains("bottom"))) builtin = d;
+                } else if (t != AudioDeviceInfo.TYPE_TELEPHONY && t != AudioDeviceInfo.TYPE_FM_TUNER
+                        && t != AudioDeviceInfo.TYPE_TV_TUNER && t != 25 /* REMOTE_SUBMIX */
+                        && t != 28 /* ECHO_REFERENCE */) {
+                    headset = true;  // any external input (Bluetooth, wired, USB) could be picked over the phone mic
+                }
             }
+            if (headset && builtin != null) r.setPreferredDevice(builtin);
         } catch (Exception e) { /* keep the system default */ }
     }
 

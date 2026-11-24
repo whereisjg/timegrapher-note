@@ -164,8 +164,7 @@ input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px s
         <label for="method">계산 방식</label>
         <select id="method">
           <option value="auto">자동 (틱이 약하면 약한 신호 모드로 전환)</option>
-          <option value="tick">개별 틱</option>
-          <option value="fold" id="foldOpt">약한 신호 (겹쳐 평균)</option>
+          <option value="tick">또렷한 신호만 (신호 대 잡음비 25 이상)</option>
         </select>
       </div>
       <p class="hint">bph는 시간당 진동 횟수(예: 28,800 · 21,600)입니다. 리프트 앵글은 진폭 계산에만 쓰이며, 모르면 일반값 52°를 두세요.</p>
@@ -727,7 +726,8 @@ const TG = (() => {
     const pre = Math.round(Math.min(0.020, 0.45 * T0) * sr), post = Math.round(Math.min(0.012, 0.25 * T0) * sr);
     const wA = circWin(G, dA, pre, post), wB = circWin(G, dB, pre, post);
     const sA = shapeAmp(wA, 1, sr, T0, la, pre), sB = shapeAmp(wB, 1, sr, T0, la, pre);
-    if (!(sA.shape.start >= 0) || !(sB.shape.start >= 0)) throw new Error('틱 소리의 시작(언락)을 구분하지 못했습니다. 시계를 마이크에 더 가까이 대고 다시 재 주세요.');
+    // unlock not found (weak or unusual tick): keep the fold result so the rate is still shown
+    if (!(sA.shape.start >= 0) || !(sB.shape.start >= 0)) return base;
 
     // beat error: time from beat A's unlock to beat B's unlock, against one beat period
     const uA = dA - pre + sA.shape.start, uB = dB - pre + sB.shape.start;
@@ -823,8 +823,7 @@ const TG = (() => {
     $('proTag').hidden = !(BILL && pro);
     $('proPrice').textContent = proPrice;
     $('proPrice').hidden = !proPrice;
-    $('foldOpt').textContent = pro ? '약한 신호 (겹쳐 평균)' : '약한 신호 (겹쳐 평균) · 프로';
-    $('method').options[0].textContent = pro ? '자동 (틱이 약하면 약한 신호 모드로 전환)' : '자동';
+    $('method').options[0].textContent = pro ? '자동 (약한 신호도 계산)' : '자동 (또렷한 신호만 · 약한 신호는 프로)';
     try { renderLog(); } catch (e) {}
   }
   window.__billing = s => {
@@ -923,8 +922,8 @@ const TG = (() => {
     last = r; lastIsSample = isSample;
     $('sampleTag').hidden = !isSample;
     const expect = r.dur * r.bph / 3600;
-    const fold = r.mode === 'fold';
-    const shaky = fold ? (r.snr < 6 || r.sdMs > 2) : (r.used < expect * 0.5 || r.sdMs > 1.5);
+    const fold = r.mode === 'fold', tpl = r.engine === 'template';
+    const shaky = fold || tpl ? (r.snr < 6 || r.sdMs > 2) : (r.used < expect * 0.5 || r.sdMs > 1.5);
     // ± = standard error of the rate; large while the recording is still short
     const pm = r.rateErr > 0 ? Math.max(0.1, r.rateErr) : null;
     const rough = !shaky && pm !== null && pm > 1.5;
@@ -939,18 +938,18 @@ const TG = (() => {
     $('amp').textContent = r.amp ? Math.round(r.amp) + '°' : '—';
     $('be').textContent = r.beatErr.toFixed(1) + ' ms';
     $('bphOut').textContent = r.bph.toLocaleString('en-US');
-    $('ticksLbl').textContent = fold ? '신호 대 잡음비' : '사용한 틱';
-    $('ticks').textContent = fold ? r.snr.toFixed(0) : r.used;
-    $('traceLegend').innerHTML = fold
+    $('ticksLbl').textContent = fold || tpl ? '신호 대 잡음비' : '사용한 틱';
+    $('ticks').textContent = fold || tpl ? r.snr.toFixed(0) : r.used;
+    $('traceLegend').innerHTML = fold && !tpl
       ? '<span><i class="dot" style="background:var(--tic)"></i>구간별 위치</span><span>위로 기울면 빠름</span>'
       : '<span><i class="dot" style="background:var(--tic)"></i>짝수 틱</span><span><i class="dot" style="background:var(--toc)"></i>홀수 틱</span><span>위로 기울면 빠름</span>';
     const q = [];
-    if (fold) {
-      q.push(`약한 신호 모드: ${r.dur.toFixed(0)}초 녹음을 ${r.segments}개 구간으로 나눠 박자 간격으로 겹쳐 계산했습니다.`);
+    if (fold || tpl) {
+      q.push(`${fold ? '약한 신호 모드: ' : ''}${r.dur.toFixed(0)}초 녹음을 ${r.segments}개 구간으로 나눠 박자 간격으로 겹쳐 계산했습니다.`);
       if (shaky) q.push(`신호 대 잡음비가 ${r.snr.toFixed(1)}로 낮아(6 이상 필요) 결과를 믿기 어렵습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 옆면을 마이크 구멍에 바로 대고 더 조용한 곳에서 재 주세요.`);
     } else q.push(`${r.dur.toFixed(0)}초 녹음에서 틱 ${r.detected}개를 찾아 ${r.used}개를 계산에 썼습니다.`);
-    if (shaky && !fold && !pro) q.push('케이스가 두꺼워 틱이 약한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.');
-    if (shaky && !fold) q.push(`예상 틱 ${Math.round(expect)}개 중 ${r.used}개만 일정하게 잡혔습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 뒷판을 폰 아래쪽 마이크 구멍에 바로 붙이고, 주변 소음을 줄여 주세요.`);
+    if (shaky && !fold && !tpl && !pro) q.push('케이스가 두꺼워 틱이 약한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.');
+    if (shaky && !fold && !tpl) q.push(`예상 틱 ${Math.round(expect)}개 중 ${r.used}개만 일정하게 잡혔습니다(추정값 ${fmtRate(r.rate)}초/일). 시계 뒷판을 폰 아래쪽 마이크 구멍에 바로 붙이고, 주변 소음을 줄여 주세요.`);
     if (!fold && r.sdMs > 0.6) q.push('틱 간격이 고르지 않아 결과가 흔들릴 수 있습니다. 더 조용한 곳에서 다시 재 보세요.');
     if (r.bph !== r.bphAuto) q.push(`소리로 추정한 bph는 ${r.bphAuto}입니다. 설정값을 확인하세요.`);
     if (!r.amp) q.push('진폭은 계산하지 않았습니다. 평균 틱 파형에서 큰 소리(드롭) 앞의 작은 소리(언락)가 잡히지 않았거나, 계산값이 130~370° 범위를 벗어났습니다.');
@@ -961,9 +960,6 @@ const TG = (() => {
   }
 
   const opts = () => ({ bph: $('bph').value, la: +$('la').value || 52, method: pro ? $('method').value : 'tick' });
-  $('method').addEventListener('change', () => {
-    if (!pro && $('method').value === 'fold') { $('method').value = 'auto'; upsell('약한 신호 모드는 프로 기능입니다.'); }
-  });
   function setStatus(t, err) { const s = $('status'); s.textContent = t; s.classList.toggle('err', !!err); }
 
   async function decode(file) {
@@ -1110,7 +1106,7 @@ const TG = (() => {
 
   let armed = false;
   $('clear').addEventListener('click', () => {
-    if (!armed) { armed = true; $('clear').textContent = '한 번 더 누르면 삭제'; setTimeout(() => { armed = false; $('clear').textContent = '전체 삭제'; }, 3000); return; }
+    if (!armed) { armed = true; $('clear').textContent = !pro && log.length > FREE_LOGS ? `한 번 더 누르면 저장된 ${log.length}개 모두 삭제` : '한 번 더 누르면 삭제'; setTimeout(() => { armed = false; $('clear').textContent = '전체 삭제'; }, 3000); return; }
     log = []; store(log); renderLog(); armed = false; $('clear').textContent = '전체 삭제';
   });
 
@@ -1132,6 +1128,8 @@ const TG = (() => {
   // ---- live microphone (Android app build only) ----
   const APP = !!window.__APP__ && (!!window.AndroidRec || !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
   let live = null;
+  // the engine needs 4 segments of max(2, min(4, 24·T)) s (≥ 12 s); 'auto' bph assumes the longest
+  const minSec = () => { const b = +$('bph').value; return Math.max(12, 4 * (b ? Math.max(2, Math.min(4, 24 * 3600 / b)) : 4)) + 0.5; };
   const LIVE_MAX = 60;
   function stopLive(final) {
     if (!live) return;
@@ -1189,11 +1187,11 @@ const TG = (() => {
       // no audio for 3 s: the mic was taken (call, another app) or recording stopped underneath us
       if (L.len !== L.seen) { L.seen = L.len; L.stall = 0; }
       else if (++L.stall >= 3) {
-        if (sec >= 15) { stopLive(true); setStatus($('status').textContent + ' 마이크 입력이 끊겨 여기서 멈췄습니다.', $('status').classList.contains('err')); }
+        if (sec >= minSec()) { stopLive(true); setStatus($('status').textContent + ' 마이크 입력이 끊겨 여기서 멈췄습니다.', $('status').classList.contains('err')); }
         else { stopLive(false); setStatus('마이크 입력이 끊겼습니다. 통화 중이거나 다른 앱이 마이크를 쓰고 있는지 확인한 뒤 다시 시작해 주세요.', true); }
         return;
       }
-      if (sec < 12) { setStatus(`측정 중 ${sec.toFixed(0)}초 · 12~16초부터 결과가 나옵니다.`); return; }
+      if (sec < minSec()) { setStatus(`측정 중 ${sec.toFixed(0)}초 · ${Math.ceil(minSec())}초부터 결과가 나옵니다.`); return; }
       if (performance.now() < (L.next || 0)) { setStatus(`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초`); return; }
       try {
         const t0 = performance.now();

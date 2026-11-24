@@ -6,11 +6,11 @@
 ## 구조
 - 이 폴더 = Android Studio 프로젝트 (Java, AndroidX 없음, 단일 Activity + WebView)
 - `app/src/main/assets/index.html` 한 파일이 앱 화면과 분석 엔진 전체 (HTML/CSS/JS)
-  - `TG` 객체: 분석 엔진 (`analyze` 개별 틱, `analyzeFold` 약한 신호 폴딩, `measure` 자동 선택, `synth` 가상 신호)
+  - `TG` 객체: 분석 엔진 (`analyze` 개별 틱, `analyzeFold` 약한 신호 폴딩, `analyzeTpl` 템플릿(기본), `measure` = analyzeTpl + 무료 SNR 제한, `synth` 가상 신호)
   - 화면 로직: 시계 목록, 측정, 기록, 프로 잠금
 - `MainActivity.java`: WebView, `https://appassets.androidplatform.net/` 로 assets 제공, 마이크 권한, 파일 선택, edge-to-edge 여백
 - `NativeRec.java`: AudioRecord로 48 kHz PCM 원음 수집 → 100 ms마다 base64로 `window.__recData()` 호출 (JS 이름 `AndroidRec`)
-  - 소스 우선순위: UNPROCESSED(9) → VOICE_RECOGNITION(6) → MIC(1). 입력 장치는 내장 마이크로 고정(`setPreferredDevice`) — 갤럭시 버즈 연결 시 이어폰 마이크로 녹음돼 틱을 못 찾던 문제(2026-11-24)
+  - 소스 우선순위: UNPROCESSED(9) → VOICE_RECOGNITION(6) → MIC(1). 외부 입력(블루투스·유선·USB)이 연결돼 있을 때만 내장 마이크로 고정(`setPreferredDevice`, 여러 개면 주소에 bottom 있는 것) — 갤럭시 버즈 연결 시 이어폰 마이크로 녹음돼 틱을 못 찾던 문제(2026-11-24)
   - 웹 오디오(getUserMedia) 경로는 입력/출력 클럭 불일치로 샘플이 늘거나 줄어 오차가 수천 s/d로 튀었음 → 네이티브 녹음으로 해결
 - `Billing.java`: Play Billing Library 8.0.0, 일회성 상품 `pro_unlock` (JS 이름 `AndroidBilling`: `isPro()`, `price()`, `refresh()`, `buy()` → 결과는 `window.__billing({pro, price, msg, err})`)
 
@@ -25,7 +25,7 @@
 | 기능 | 무료 | 프로 (`pro_unlock`, 제안가 ₩3,900) |
 |---|---|---|
 | 실시간 측정(개별 틱), 파일 분석, 오차·진폭·비트 에러·트레이스, 보정값 | O | O |
-| 약한 신호 모드(폴딩) | X | O |
+| 약한 신호(SNR 6~25) 계산 — 계산 방식 '자동' | X ('또렷한 신호만' 고정) | O |
 | 시계 등록 | 1개 | 무제한 |
 | 측정 기록 | 최근 5개 표시(저장은 전부, 업그레이드하면 모두 보임) | 무제한 + 자세별 평균 |
 - `AndroidBilling` 이 없는 환경(웹 미리보기)과 Android Studio ▶ 실행(디버그 빌드)에서는 모든 기능 열림. 서명된 릴리스 AAB는 영향 없음. 결제 시험은 Play 테스트 트랙으로 받은 앱에서
@@ -38,7 +38,9 @@
   - 진폭: Δt = 언락 봉우리 → 드롭 봉우리, A = LA / (2·sin(π·Δt / 2T)), 두 박자 평균
 - 트레이스: 구간별로 박자 A·B 파형을 전체 템플릿과 상호상관한 위치
 - 오차 범위(±, `rateErr`): 구간별 위치 직선 맞춤의 기울기 표준오차 × 86400. ±1.5초/일 넘으면 '예비값'으로 흐리게, METAS·COSC 표시 숨김. 첫 결과는 구간 4개 이상(28,800 bph 12초, 21,600 bph 16초). 가상 신호 16회 반복에서 ±와 실제 흩어짐 비율 0.8~1.4 (2026-11-24). 실제 시계의 느린 흔들림(자세·온도)은 ±에 다 안 잡힐 수 있음
-- 무료(`method:'tick'`)는 SNR ≥ 25인 또렷한 신호만 허용, 프로는 약한 신호도 허용(SNR ≥ 6)
+- 무료(`method:'tick'`)는 SNR ≥ 25인 또렷한 신호만 허용, 프로는 약한 신호도 허용(SNR ≥ 6). 계산 방식 선택지는 '자동'·'또렷한 신호만' 두 개(옛 '약한 신호 (겹쳐 평균)'은 자동과 같아 삭제)
+- 언락 봉우리를 못 찾으면 `analyzeTpl`이 폴딩 결과(`analyzeFold`)를 그대로 돌려줌 — 오차는 보이고 진폭은 비움
+- 실시간 측정 첫 결과·마이크 끊김 판정 시점은 `minSec()` = max(12, 4구간) + 0.5초 (bph 자동이면 16.5초)
 - 구형 `analyze`(임계값 교차 방식)는 틱과 톡의 소리 크기 패턴이 다르면 서로 다른 소리를 기준으로 잡아 비트 에러가 ~3 ms로 잘못 나오는 버그가 있었음 (2026-11-24 카키 실녹음으로 확인). 사용하지 말 것 (첫 화면 샘플 표시에만 남아 있음)
 - 검증: 카키 실녹음(다이얼 위, 60초) → 오차 −0.8 s/d, 비트 에러 0.46 ms, 진폭 297°. 같은 시각 Watch Accuracy Meter: +1 s/d, 0.3 ms, 300°
 - 가상 신호: 오차 ±0.1 s/d, 비트 에러 ±0.03 ms, 진폭 ±1° (홀수 틱 앞소리가 약해지는 경우 포함)
