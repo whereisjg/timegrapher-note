@@ -164,11 +164,9 @@ h1 .chip, h1 .chip.ok{vertical-align:middle;font-family:var(--f-body);font-size:
 .sheet #mGauge{width:100%;max-width:340px;margin:0 auto -6px;display:block}
 .mic{position:fixed;bottom:0;left:50%;width:0;height:0;pointer-events:none;z-index:21}
 .mic i{position:absolute;left:-90px;top:-90px;width:180px;height:180px;border-radius:50%;border:2px solid var(--gold);
-  opacity:0;animation:ripple 2.4s ease-out infinite}
-.mic i:nth-child(2){animation-delay:.8s}.mic i:nth-child(3){animation-delay:1.6s}
+  opacity:0;animation:ripple 1.2s ease-out forwards}
 .mic b{position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:var(--gold)}
 @keyframes ripple{0%{transform:scale(.08);opacity:.9}100%{transform:scale(1);opacity:0}}
-@media (prefers-reduced-motion:reduce){.mic i{animation:none;opacity:.35;transform:scale(.5)}}
 .prog{height:2px;background:var(--line);margin:4px 0}
 .prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .9s linear}
 .mstats{display:flex;justify-content:center;gap:22px;color:var(--muted);font-size:.9rem}
@@ -355,7 +353,7 @@ body.modal{overflow:hidden}
 </div>
 
 <div class="overlay" id="mOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
-  <div class="mic" id="mMic" hidden aria-hidden="true"><i></i><i></i><i></i><b></b></div>
+  <div class="mic" id="mMic" hidden aria-hidden="true"><b></b></div>
   <div class="sheet">
     <div class="label" id="mTitle">실시간 측정</div>
     <div class="mwatch" id="mWatch"></div>
@@ -1426,7 +1424,7 @@ const TG = (() => {
     drawGauge(0, 'none', 'mGauge');
     $('mStop').hidden = false; $('mSave').hidden = $('mWav').hidden = $('mClose').hidden = $('mRetry').hidden = true;
     $('mOverlay').hidden = false; document.body.classList.add('modal'); sheetNative(true);
-    $('mMic').hidden = false;
+    $('mMic').querySelectorAll('i').forEach(r => r.remove()); $('mMic').hidden = false;
   }
   function closeSheet() { $('mOverlay').hidden = true; document.body.classList.remove('modal'); sheetNative(false); }
   function sheetNative(open) { try { if (window.AndroidRec && window.AndroidRec.sheet) window.AndroidRec.sheet(open); } catch (e) {} }
@@ -1485,8 +1483,30 @@ const TG = (() => {
         L.buf[L.len + i] = v / 32768;
       }
       L.len += m;
+      tickPulse(L, L.len - m, L.len);
     };
     beginLive(L);
+  }
+  // one ripple per tick heard: finds sharp clicks in the new samples and replays them ~0.1 s later, keeping the rhythm
+  const calmUI = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function tickPulse(L, from, to) {
+    if (calmUI || $('mMic').hidden) return;
+    const blk = Math.round(L.sr / 500), gap = Math.round(L.sr * 0.06), now = performance.now();
+    const P = L.pulse || (L.pulse = { noise: 0, last: -1e9, prev: 0 });
+    for (let a = from; a + blk <= to; a += blk) {
+      let v = 0;
+      for (let i = a; i < a + blk; i++) { const d = Math.abs(L.buf[i] - P.prev); P.prev = L.buf[i]; if (d > v) v = d; }
+      if (!P.noise) { P.noise = v || 1e-4; continue; }
+      if (v > 6 * P.noise && a - P.last > gap) {
+        P.last = a;
+        setTimeout(ripple, Math.max(0, 100 - (to - a) / L.sr * 1000));
+      }
+      if (v < 3 * P.noise) P.noise += (v - P.noise) * 0.01;
+    }
+  }
+  function ripple() {
+    const m = $('mMic'); if (m.hidden || m.children.length > 16) return;
+    const r = document.createElement('i'); r.addEventListener('animationend', () => r.remove()); m.appendChild(r);
   }
   function clearRec() { lastRec = null; $('wav').hidden = true; }   // a new result replaces the saved-able recording
   function beginLive(L) {
@@ -1545,6 +1565,7 @@ const TG = (() => {
       const n = Math.min(d.length, L.buf.length - pos);
       L.buf.set(d.subarray(0, n), pos);
       L.len = Math.max(L.len, pos + n);
+      tickPulse(L, pos, pos + n);
     };
     let worklet = false;
     if (ac.audioWorklet && window.AudioWorkletNode) {
