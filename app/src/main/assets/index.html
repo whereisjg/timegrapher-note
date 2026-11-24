@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>window.__APP__=true</script></head><body><title>타임그래퍼 노트</title>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>window.__APP__=true</script></head><body><title>워치노트</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: instrument panel — controls left, readout + chart-paper trace right; stacks on phones */
@@ -111,7 +111,7 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
 
 <div class="wrap">
   <header>
-    <h1>타임그래퍼 노트 <span class="chip ok" id="proTag" hidden>프로</span></h1>
+    <h1>워치노트 <span class="chip ok" id="proTag" hidden>프로</span></h1>
   </header>
   <nav class="tabs" role="tablist"><button class="tab" role="tab" id="tMeasure" type="button" aria-selected="true">측정</button><button class="tab" role="tab" id="tLib" type="button" aria-selected="false">시계 보관함</button></nav>
 
@@ -1268,7 +1268,7 @@ const TG = (() => {
     if (!lastRec) return;
     const d = new Date(lastRec.ts), p2 = n => String(n).padStart(2, '0');
     const w = curWatch();
-    const name = `timegrapher_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}${w ? '_' + w.name.replace(/[\\/:*?"<>|\s]+/g, '-') : ''}.wav`;
+    const name = `watchnote_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}${w ? '_' + w.name.replace(/[\\/:*?"<>|\s]+/g, '-') : ''}.wav`;
     const bytes = wavBytes(lastRec.x, lastRec.sr);
     if (window.AndroidRec && window.AndroidRec.saveWav) {
       let b = '';
@@ -1308,7 +1308,7 @@ const TG = (() => {
   function startNative() {
     let sr = -2;
     try { sr = window.AndroidRec.start(); } catch (e) {}
-    if (sr === -1) { setStatus('마이크 권한을 허용한 뒤 다시 눌러 주세요. 허용 창이 뜨지 않으면 휴대폰 설정 > 애플리케이션 > 타임그래퍼 노트 > 권한에서 마이크를 허용해 주세요.', true); return; }
+    if (sr === -1) { setStatus('마이크 권한을 허용한 뒤 다시 눌러 주세요. 허용 창이 뜨지 않으면 휴대폰 설정 > 애플리케이션 > 워치노트 > 권한에서 마이크를 허용해 주세요.', true); return; }
     if (!(sr > 0)) { setStatus('마이크를 열지 못했습니다. 통화나 녹음 중인 다른 앱이 있는지 확인해 주세요.', true); return; }
     const L = { native: true, sr, buf: new Float32Array(Math.ceil(sr * LIVE_MAX) + 8192), len: 0, gaps: 0, mode: 'native' };
     window.__recData = b64 => {
@@ -1358,7 +1358,7 @@ const TG = (() => {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } });
     } catch (e) {
-      setStatus('마이크를 쓸 수 없습니다. 휴대폰 설정 > 애플리케이션 > 타임그래퍼 > 권한에서 마이크를 허용해 주세요.', true);
+      setStatus('마이크를 쓸 수 없습니다. 휴대폰 설정 > 애플리케이션 > 워치노트 > 권한에서 마이크를 허용해 주세요.', true);
       return;
     }
     const AC = window.AudioContext || window.webkitAudioContext;
