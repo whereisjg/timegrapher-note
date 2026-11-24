@@ -2,6 +2,7 @@ package app.tgnote.timegrapher;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
@@ -102,6 +103,30 @@ public class NativeRec {
             return;
         }
         act.runOnUiThread(new Runnable() { public void run() { act.createFile(data, name, mime); } });
+    }
+
+    /** Overhaul reminders from the page (JSON list, see Reminders); an empty list clears them. */
+    @JavascriptInterface
+    public void setReminders(String json) { Reminders.save(act, json); }
+
+    /** Whether notifications can be shown right now (permission granted and not switched off). */
+    @JavascriptInterface
+    public boolean notifOk() { return act.notificationsAllowed(); }
+
+    /** Shows a notification right away so the user can see that reminders arrive. */
+    @JavascriptInterface
+    public void testNotif(String title, String body) {
+        Intent in = new Intent(act, ReminderReceiver.class);
+        in.putExtra("id", 1);
+        in.putExtra("title", title);
+        in.putExtra("body", body);
+        act.sendBroadcast(in);
+    }
+
+    /** Asks for the notification permission (Android 13+); the answer comes back as window.__notifPerm(bool). */
+    @JavascriptInterface
+    public void askNotif() {
+        act.runOnUiThread(new Runnable() { public void run() { act.askNotificationPermission(); } });
     }
 
     /** The measuring sheet opened or closed (Back closes it while it is up). */

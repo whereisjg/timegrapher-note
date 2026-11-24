@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Watch Note</string>
     <string name="pick_audio">Aufnahme wählen</string>
+    <string name="notif_channel">Revisions-Erinnerungen</string>
 </resources>

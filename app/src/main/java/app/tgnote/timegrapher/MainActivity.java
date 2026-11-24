@@ -161,11 +161,29 @@ public class MainActivity extends Activity {
 
     @Override
     public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        if (code == 5) {
+            web.evaluateJavascript("window.__notifPerm&&window.__notifPerm(" + (res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED) + ")", null);
+            return;
+        }
         if (code == 1 && pending != null) {
             if (res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED)
                 pending.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
             else pending.deny();
             pending = null;
+        }
+    }
+
+    boolean notificationsAllowed() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return false;
+        android.app.NotificationManager nm = (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        return nm == null || nm.areNotificationsEnabled();
+    }
+
+    void askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 5);
+        } else {
+            web.evaluateJavascript("window.__notifPerm&&window.__notifPerm(" + notificationsAllowed() + ")", null);
         }
     }
 

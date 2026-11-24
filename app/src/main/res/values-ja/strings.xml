@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">ウォッチノート</string>
     <string name="pick_audio">録音ファイルを選択</string>
+    <string name="notif_channel">オーバーホール通知</string>
 </resources>
