@@ -89,10 +89,10 @@
 - [ ] 본인·주소 인증 → 구글 확인 중. 결과는 whereisjg@icloud.com 으로 옴
 - [ ] 전화번호 인증, Android 기기 인증(Play Console 모바일 앱)
 - [x] 서명된 AAB 빌드 성공
-- [x] 개인정보처리방침 공개 페이지: https://claude.ai/artifact/JaLhzRRS3HtuCX1e4V5The
+- [x] 개인정보처리방침 공개 페이지: https://claude.ai/artifact/JaLhzRRS3HtuCX1e4V5The (2026-11-24 자동 백업·백업 파일·알림 내용 추가)
 - [x] 스토어 소개문·아이콘 512·그래픽 1024×500 → `docs/store/` (2026-11-24 작성. 그 전 체크는 잘못 적힌 것이었음)
 - [x] 스토어 스크린샷 6장 `docs/store/screenshots/` (2026-11-24 새 디자인으로 교체: 측정 중·측정 완료·결과·설정·보관함·기록)
-- [ ] 앱 만들기 → 스토어 등록정보·앱 콘텐츠 설문 입력
+- [ ] 앱 만들기 → 스토어 등록정보·앱 콘텐츠 설문 입력 (입력 답안 정리: `docs/store/play_console_answers.md`)
 - [ ] 인앱 상품 `pro_unlock` 생성 (AAB 업로드 후 가능)
 - [ ] 비공개 테스트: 테스터 12명 이상 × 14일 연속 (목표 15~20명, 구글 그룹 사용). 개인 계정은 앱마다 필요
 - [ ] 라이선스 테스트 계정으로 결제 시험
