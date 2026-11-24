@@ -8,6 +8,8 @@
 - `app/src/main/assets/index.html` 한 파일이 앱 화면과 분석 엔진 전체 (HTML/CSS/JS)
   - `TG` 객체: 분석 엔진 (`analyze` 개별 틱, `analyzeFold` 약한 신호 폴딩, `analyzeTpl` 템플릿(기본), `measure` = analyzeTpl + 무료 SNR 제한, `synth` 가상 신호)
   - 화면 로직: 시계 목록, 측정, 기록, 프로 잠금
+  - 시계 보관함(2026-11-24): 등록 시계마다 카드(최근 측정·자세별 평균(프로)·메모·'이 시계로 측정'·'기록 보기'(기록 목록을 그 시계로 거름)·편집). 기록은 `wid`(시계 id)로 연결, 옛 기록은 이름으로 찾아 첫 실행 때 `wid` 붙임, 이름 바꾸면 기록 이름도 바뀜
+  - 무브먼트 목록 값: 옛 형식 `bph|la`, 새 형식 `key|bph|la`(la 비면 '미공개' → 52°). 리프트 앵글은 근거 있는 것만 채움(로렉스 3135 52°, 오메가 코액시얼 38°)
 - `MainActivity.java`: WebView, `https://appassets.androidplatform.net/` 로 assets 제공, 마이크 권한, 파일 선택, edge-to-edge 여백
 - `NativeRec.java`: AudioRecord로 48 kHz PCM 원음 수집 → 100 ms마다 base64로 `window.__recData()` 호출 (JS 이름 `AndroidRec`)
   - 소스 우선순위: UNPROCESSED(9) → VOICE_RECOGNITION(6) → MIC(1). 외부 입력(블루투스·유선·USB)이 연결돼 있을 때만 내장 마이크로 고정(`setPreferredDevice`, 여러 개면 주소에 bottom 있는 것) — 갤럭시 버즈 연결 시 이어폰 마이크로 녹음돼 틱을 못 찾던 문제(2026-11-24)

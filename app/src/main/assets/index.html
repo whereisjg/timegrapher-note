@@ -94,6 +94,15 @@ h1 .chip{vertical-align:middle;font-size:.7rem}
 input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
 .mini{display:flex;gap:4px}
 .link{background:none;border:none;color:var(--accent);font:inherit;font-size:.85rem;cursor:pointer;padding:2px 4px}
+.lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:8px;background:var(--bg);min-width:0}
+.card h3{margin:0;font-size:1.05rem;font-weight:600;overflow-wrap:anywhere}
+.card .sub{font-size:.8rem;color:var(--muted)}
+.card .now{font-family:var(--f-mono);font-size:1.3rem;font-variant-numeric:tabular-nums}
+.card .now small{font-size:.8rem;color:var(--muted);margin-left:4px}
+.card textarea{font:inherit;font-size:.85rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:6px 8px;width:100%;resize:vertical;min-height:2.6em}
+.card .acts{display:flex;gap:6px;flex-wrap:wrap}
+.card .acts .btn{padding:7px 10px;font-size:.85rem}
 </style>
 
 <div class="wrap">
@@ -125,6 +134,13 @@ input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px s
             <option value="21600|52">미요타 8 계열 (21,600 · 52°)</option>
             <option value="28800|52">미요타 9 계열 (28,800 · 52°)</option>
             <option value="21600|50">ETA 2801 · 셀리타 SW216 수동 계열 (21,600 · 50°)</option>
+            <option value="eta2892|28800|">ETA 2892 · 셀리타 SW300 계열 (28,800 · 리프트 앵글 미공개)</option>
+            <option value="eta7750|28800|">ETA 7750 · 셀리타 SW500 크로노 계열 (28,800 · 미공개)</option>
+            <option value="h10|21600|">해밀턴 H-10 오토 (21,600 · 미공개)</option>
+            <option value="h50|21600|">해밀턴 H-50 수동 · ETA 2801 기반 (21,600 · 미공개)</option>
+            <option value="mt56|28800|">튜더 MT56xx (28,800 · 미공개)</option>
+            <option value="r3135|28800|52">로렉스 3135 (28,800 · 52°)</option>
+            <option value="coax|25200|38">오메가 코액시얼 8500·8800·8900 계열 (25,200 · 38°)</option>
           </select>
         </div>
         <div class="two">
@@ -132,7 +148,7 @@ input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px s
             <select id="wBph"><option value="auto">모름 (자동)</option><option>18000</option><option>19800</option><option>21600</option><option>25200</option><option>28800</option><option>36000</option></select></div>
           <div class="field"><label for="wLa">리프트 앵글 (°)</label><input id="wLa" type="number" min="38" max="60" step="1" value="52"></div>
         </div>
-        <p class="hint">bph와 리프트 앵글은 시계 설명서나 무브먼트 사양에 나옵니다. 모르면 비워 두세요. bph는 소리로 추정하고, 리프트 앵글은 일반값 52°를 씁니다.</p>
+        <p class="hint">bph와 리프트 앵글은 시계 설명서나 무브먼트 사양에 나옵니다. 모르면 비워 두세요. bph는 소리로 추정하고, 리프트 앵글은 일반값 52°를 씁니다. '미공개'는 제조사가 리프트 앵글을 밝히지 않은 무브먼트라 52°로 채웁니다(진폭에만 영향).</p>
         <div class="two"><button class="btn" id="wCancel" type="button">취소</button><button class="btn primary" id="wSave" type="button">저장</button></div>
       </div>
       <div class="field">
@@ -236,10 +252,19 @@ input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px s
     </section>
   </div>
 
-  <section class="panel" aria-labelledby="log-h">
+  <section class="panel" aria-labelledby="lib-h">
+    <div class="row">
+      <div class="label" id="lib-h">시계 보관함</div>
+      <button class="btn" id="libAdd" type="button">＋ 새 시계</button>
+    </div>
+    <div class="lib" id="lib"></div>
+    <p class="empty" id="libEmpty">등록한 시계가 여기에 카드로 모입니다. 시계마다 최근 측정, 자세별 평균, 메모를 볼 수 있습니다.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="log-h" id="logPanel">
     <div class="row">
       <div class="label" id="log-h">측정 기록 · 이 브라우저에만 저장</div>
-      <button class="btn" id="clear" type="button" hidden>전체 삭제</button>
+      <span class="mini"><span class="chip" id="logF" hidden></span><button class="link" id="logAll" type="button" hidden>전체 보기</button><button class="btn" id="clear" type="button" hidden>전체 삭제</button></span>
     </div>
     <div id="summary"></div>
     <div class="tbl-wrap"><table id="log" hidden>
@@ -838,6 +863,8 @@ const TG = (() => {
   let watches = (() => { try { return JSON.parse(localStorage.getItem(WKEY) || '[]'); } catch (e) { return []; } })();
   const saveWatches = () => { try { localStorage.setItem(WKEY, JSON.stringify(watches)); } catch (e) {} };
   const curWatch = () => watches.find(w => w.id === $('watch').value) || null;
+  const movParts = v => { const p = v.split('|'); return p.length === 3 ? [p[1], p[2]] : p; };
+  const movName = v => { const o = v && Array.from($('wMov').options).find(o => o.value === v); return o ? o.textContent.replace(/\s*\(.*\)$/, '') : ''; };
   let editing = null;
   let last = null, lastIsSample = true;
 
@@ -985,6 +1012,7 @@ const TG = (() => {
     add('__add', '＋ 새 시계 추가');
     s.value = sel && (sel === '' || watches.some(w => w.id === sel)) ? sel : (watches[0] ? watches[0].id : '');
     applyWatch();
+    try { renderLog(); } catch (e) {}  // the log (and library) may not exist yet during start-up
   }
   function applyWatch() {
     const w = curWatch();
@@ -1004,22 +1032,28 @@ const TG = (() => {
   }
   $('wMov').addEventListener('change', () => {
     const v = $('wMov').value; if (!v) return;
-    const [b, l] = v.split('|'); $('wBph').value = b; $('wLa').value = l;
+    const [b, l] = movParts(v); $('wBph').value = b; $('wLa').value = l || 52;
   });
   $('watch').addEventListener('change', () => {
     if ($('watch').value === '__add') {
       $('watch').value = editing ? editing.id : (watches[0] ? watches[0].id : '');
-      if (!pro && watches.length >= FREE_WATCHES) { upsell(`무료 버전은 시계를 ${FREE_WATCHES}개까지 등록할 수 있습니다.`); applyWatch(); return; }
-      openForm(null); return;
+      applyWatch(); addWatch(); return;
     }
     applyWatch();
   });
+  function addWatch() {
+    if (!pro && watches.length >= FREE_WATCHES) { upsell(`무료 버전은 시계를 ${FREE_WATCHES}개까지 등록할 수 있습니다.`); return; }
+    openForm(null); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  $('libAdd').addEventListener('click', addWatch);
   $('wEdit').addEventListener('click', () => { const w = curWatch(); if (w) openForm(w); });
   let delArmed = false;
   $('wDel').addEventListener('click', () => {
     const w = curWatch(); if (!w) return;
     if (!delArmed) { delArmed = true; $('wDel').textContent = '한 번 더 누르면 삭제'; setTimeout(() => { delArmed = false; $('wDel').textContent = '삭제'; }, 3000); return; }
-    delArmed = false; watches = watches.filter(x => x.id !== w.id); saveWatches(); fillWatches('');
+    delArmed = false; watches = watches.filter(x => x.id !== w.id); saveWatches();
+    if (logFilter === w.id) logFilter = null;
+    fillWatches('');
     setStatus(`'${w.name}'을(를) 목록에서 지웠습니다. 저장된 측정 기록은 남아 있습니다.`);
   });
   $('wCancel').addEventListener('click', () => { $('wForm').hidden = true; editing = null; });
@@ -1028,7 +1062,13 @@ const TG = (() => {
     if (!name) { $('wName').focus(); setStatus('시계 이름을 입력해 주세요.', true); return; }
     const data = { name, mov: $('wMov').value, bph: $('wBph').value, la: Math.min(60, Math.max(38, +$('wLa').value || 52)) };
     let id;
-    if (editing) { Object.assign(editing, data); id = editing.id; }
+    if (editing) {
+      id = editing.id;
+      // keep this watch's records attached under the new name
+      log.forEach(e => { if (ofWatch(e, editing)) { e.wid = id; e.watch = name; } });
+      store(log);
+      Object.assign(editing, data);
+    }
     else { id = 'w' + Date.now(); watches.push(Object.assign({ id }, data)); }
     saveWatches(); $('wForm').hidden = true; editing = null; fillWatches(id);
     setStatus(`'${name}'을(를) 저장했습니다.`);
@@ -1058,13 +1098,67 @@ const TG = (() => {
   const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
   const store = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch (e) { return false; } };
   let log = load();
+  // records carry the watch id (wid); older ones only the name
+  const ofWatch = (e, w) => e.wid ? e.wid === w.id : e.watch === w.name;
+  let logFilter = null;   // watch id whose records alone are listed
+
+  $('logAll').addEventListener('click', () => { logFilter = null; renderLog(); });
+
+  // ---- watch library: one card per registered watch ----
+  function renderLibrary() {
+    const box = $('lib'); box.innerHTML = '';
+    $('libEmpty').hidden = !!watches.length;
+    const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+    const fmtDate = ts => { const d = new Date(ts); return `${d.getMonth() + 1}/${d.getDate()}`; };
+    for (const w of watches) {
+      const recs = log.filter(e => ofWatch(e, w));
+      const c = el('article', 'card');
+      c.appendChild(el('h3', null, w.name));
+      const mv = movName(w.mov);
+      c.appendChild(el('div', 'sub', `${mv ? mv + ' · ' : ''}${w.bph === 'auto' ? 'bph 자동' : (+w.bph).toLocaleString('en-US') + ' bph'} · 리프트 앵글 ${w.la}°`));
+      const lastR = recs[recs.length - 1];
+      if (lastR) {
+        const now = el('div', 'now', fmtRate(lastR.rate));
+        now.appendChild(el('small', null, `${lastR.rateErr ? '± ' + Math.max(0.1, lastR.rateErr).toFixed(1) + ' ' : ''}초/일 · ${lastR.pos}`));
+        c.appendChild(now);
+        c.appendChild(el('div', 'sub', `최근 ${fmtDate(lastR.ts)} · 진폭 ${lastR.amp ? Math.round(lastR.amp) + '°' : '—'} · 비트 에러 ${lastR.be.toFixed(1)} ms · 기록 ${recs.length}회`));
+        if (pro) {
+          const byPos = {};
+          recs.forEach(e => (byPos[e.pos] = byPos[e.pos] || []).push(e.rate));
+          const chips = el('div', 'chips');
+          Object.keys(byPos).forEach(p => { const v = byPos[p]; chips.appendChild(el('span', 'chip', `${p} ${fmtRate(v.reduce((a, b) => a + b, 0) / v.length)} (${v.length})`)); });
+          c.appendChild(chips);
+        } else c.appendChild(el('div', 'sub', '자세별 평균은 프로 기능입니다.'));
+      } else c.appendChild(el('div', 'sub', '아직 측정 기록이 없습니다.'));
+      const memo = el('textarea'); memo.maxLength = 200; memo.rows = 2; memo.placeholder = '메모 (구입일, 오버홀, 특이사항)'; memo.value = w.memo || '';
+      memo.setAttribute('aria-label', w.name + ' 메모');
+      memo.addEventListener('change', () => { w.memo = memo.value.trim(); saveWatches(); });
+      c.appendChild(memo);
+      const acts = el('div', 'acts');
+      const b1 = el('button', 'btn primary', '이 시계로 측정'); b1.type = 'button';
+      b1.onclick = () => { $('watch').value = w.id; applyWatch(); $('setup-h').scrollIntoView({ behavior: 'smooth', block: 'start' }); setStatus(`'${w.name}'을(를) 골랐습니다. 자세를 정하고 측정을 시작하세요.`); };
+      const b2 = el('button', 'btn', `기록 보기 (${recs.length})`); b2.type = 'button';
+      b2.onclick = () => { logFilter = w.id; renderLog(); $('logPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+      const b3 = el('button', 'btn', '편집'); b3.type = 'button';
+      b3.onclick = () => { openForm(w); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      acts.append(b1, b2, b3); c.appendChild(acts);
+      box.appendChild(c);
+    }
+  }
 
   function renderLog() {
     const tb = $('log').querySelector('tbody');
     tb.innerHTML = '';
-    $('log').hidden = !log.length; $('logEmpty').hidden = !!log.length; $('clear').hidden = !log.length;
+    const fw = logFilter && watches.find(w => w.id === logFilter);
+    if (!fw) logFilter = null;
+    const rows = fw ? log.filter(e => ofWatch(e, fw)) : log;
+    $('logF').hidden = $('logAll').hidden = !fw;
+    if (fw) $('logF').textContent = fw.name;
+    $('log').hidden = !rows.length; $('logEmpty').hidden = !!rows.length; $('clear').hidden = !log.length;
+    $('logEmpty').textContent = fw ? '이 시계로 저장한 측정이 아직 없습니다.' : '아직 저장된 측정이 없습니다. 파일을 분석한 뒤 \'기록에 저장\'을 누르면 여기에 쌓입니다.';
+    renderLibrary();
     // free: every record is kept, only the latest few are shown (an upgrade brings the rest back)
-    (pro ? log : log.slice(-FREE_LOGS)).slice().reverse().forEach(e => {
+    (pro ? rows : rows.slice(-FREE_LOGS)).slice().reverse().forEach(e => {
       const tr = document.createElement('tr');
       const d = new Date(e.ts);
       const cells = [
@@ -1082,7 +1176,7 @@ const TG = (() => {
     });
     // averages per watch × position
     const groups = {};
-    log.forEach(e => { const k = e.watch + '|' + e.pos; (groups[k] = groups[k] || []).push(e.rate); });
+    rows.forEach(e => { const k = e.watch + '|' + e.pos; (groups[k] = groups[k] || []).push(e.rate); });
     const keys = Object.keys(groups);
     if (!keys.length) { $('summary').innerHTML = ''; return; }
     if (!pro) { $('summary').innerHTML = `<p class="hint">자세별 평균과 무제한 기록은 프로 기능입니다. 무료 버전은 최근 ${FREE_LOGS}개만 보여 줍니다${log.length > FREE_LOGS ? ` (저장된 기록 ${log.length}개, 프로로 바꾸면 모두 보임)` : ''}.</p>`; return; }
@@ -1098,7 +1192,7 @@ const TG = (() => {
 
   $('save').addEventListener('click', () => {
     if (!last || lastIsSample) return;
-    log.push({ ts: Date.now(), watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, rateErr: last.rateErr, amp: last.amp, be: last.beatErr, bph: last.bph });
+    log.push({ ts: Date.now(), wid: curWatch() ? curWatch().id : undefined, watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, rateErr: last.rateErr, amp: last.amp, be: last.beatErr, bph: last.bph });
     const ok = store(log); renderLog();
     $('save').disabled = true;
     setStatus(ok ? '기록에 저장했습니다.' : '이 브라우저에서는 저장할 수 없어 이번 화면에서만 보입니다.', !ok);
@@ -1116,6 +1210,7 @@ const TG = (() => {
   });
   updateProUI();
   try { if (BILL) BILL.refresh(); } catch (e) {}
+  { let moved = false; log.forEach(e => { if (!e.wid) { const w = watches.find(w => w.name === e.watch); if (w) { e.wid = w.id; moved = true; } } }); if (moved) store(log); }
   let savedSel = ''; try { savedSel = localStorage.getItem('tg-cur-watch') || ''; } catch (e) {}
   fillWatches(savedSel);
   if (!watches.length) setStatus('먼저 ＋ 새 시계 추가로 내 시계를 등록하면 bph가 자동으로 맞춰지고, 기록이 시계별로 정리됩니다.');
