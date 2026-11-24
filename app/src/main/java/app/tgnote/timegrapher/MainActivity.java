@@ -10,6 +10,7 @@ import android.graphics.Insets;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -175,7 +176,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void fileSaved(String state) {
+    void fileSaved(String state) {
         web.evaluateJavascript("window.__fileSaved&&window.__fileSaved('" + state + "')", null);
     }
 
@@ -183,12 +184,19 @@ public class MainActivity extends Activity {
     protected void onActivityResult(int code, int result, Intent data) {
         if (code == 4) {
             String state = "cancel";
-            if (result == RESULT_OK && data != null && data.getData() != null && pendingFile != null) {
-                try (OutputStream o = getContentResolver().openOutputStream(data.getData())) {
-                    o.write(pendingFile);
-                    state = "ok";
-                } catch (Exception e) {
+            if (result == RESULT_OK && data != null && data.getData() != null) {
+                Uri uri = data.getData();
+                if (pendingFile == null) {
+                    // the app was restarted while the picker was open: nothing to write, so remove the empty file
+                    try { DocumentsContract.deleteDocument(getContentResolver(), uri); } catch (Exception e) { }
                     state = "fail";
+                } else {
+                    try (OutputStream o = getContentResolver().openOutputStream(uri)) {
+                        o.write(pendingFile);
+                        state = "ok";
+                    } catch (Exception e) {
+                        state = "fail";
+                    }
                 }
             }
             pendingFile = null;

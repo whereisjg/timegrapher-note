@@ -8,7 +8,7 @@
   try { lang = localStorage.getItem('tg-lang'); } catch (e) {}
   if (!['ko', 'en', 'ja', 'de', 'zh'].includes(lang)) {
     const n = (navigator.language || 'ko').toLowerCase();
-    lang = ['ko', 'ja', 'de', 'zh'].find(l => n.startsWith(l)) || 'en';
+    lang = /^zh-(tw|hk|mo|hant)/.test(n) ? 'en' : ['ko', 'ja', 'de', 'zh'].find(l => n.startsWith(l)) || 'en';
   }
   const look = k => { if (lang === 'ko') return null; const v = D[k]; return v ? v[{ en: 0, ja: 1, de: 2, zh: 3 }[lang]] : null; };
   const fill = (t, v) => t.replace(/\{(\d)\}/g, (m, i) => v[+i]);
@@ -930,6 +930,7 @@ const TG = (() => {
   let last = null, lastIsSample = true;
 
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmtInt = n => (+n).toLocaleString(I18N.lang);   // 21,600 / 21.600 by language
   const fmtRate = r => (r >= 0 ? '+' : '−') + Math.abs(r).toFixed(1);
 
   function setupCanvas(c) {
@@ -1025,7 +1026,7 @@ const TG = (() => {
     $('chips').innerHTML = shaky || rough ? '' : chips.join('');
     $('amp').textContent = r.amp ? Math.round(r.amp) + '°' : '—';
     $('be').textContent = r.beatErr.toFixed(1) + ' ms';
-    $('bphOut').textContent = r.bph.toLocaleString('en-US');
+    $('bphOut').textContent = fmtInt(r.bph);
     $('ticksLbl').textContent = fold || tpl ? TX`신호 대 잡음비` : TX`사용한 틱`;
     $('ticks').textContent = fold || tpl ? r.snr.toFixed(0) : r.used;
     $('traceLegend').innerHTML = fold && !tpl
@@ -1139,6 +1140,7 @@ const TG = (() => {
   $('file').addEventListener('change', async e => {
     const f = e.target.files[0];
     if (!f) return;
+    clearRec();
     setStatus(TX`'${f.name}' 분석 중…`);
     await new Promise(r => setTimeout(r, 30));
     try {
@@ -1161,6 +1163,7 @@ const TG = (() => {
   const store = a => { try { localStorage.setItem(KEY, JSON.stringify(a)); return true; } catch (e) { return false; } };
   let log = load();
   // records carry the watch id (wid); older ones only the name
+  const wname = n => n === '미지정' ? tx(n) : n;   // watch names are the user's own text
   const ofWatch = (e, w) => e.wid ? e.wid === w.id : e.watch === w.name;
   let logFilter = null;   // watch id whose records alone are listed
 
@@ -1188,7 +1191,7 @@ const TG = (() => {
       const c = el('article', 'card');
       c.appendChild(el('h3', null, w.name));
       const mv = movName(w.mov);
-      c.appendChild(el('div', 'sub', TX`${mv ? mv + ' · ' : ''}${w.bph === 'auto' ? TX`bph 자동` : (+w.bph).toLocaleString('en-US') + ' bph'} · 리프트 앵글 ${w.la}°`));
+      c.appendChild(el('div', 'sub', TX`${mv ? mv + ' · ' : ''}${w.bph === 'auto' ? TX`bph 자동` : fmtInt(w.bph) + ' bph'} · 리프트 앵글 ${w.la}°`));
       if (w.stamp) {
         const sd = new Date(w.stamp + 'T00:00:00'), now = new Date();
         let mo = (now.getFullYear() - sd.getFullYear()) * 12 + now.getMonth() - sd.getMonth() - (now.getDate() < sd.getDate() ? 1 : 0);
@@ -1213,7 +1216,7 @@ const TG = (() => {
       } else c.appendChild(el('div', 'sub', TX`아직 측정 기록이 없습니다.`));
       const memo = el('textarea'); memo.maxLength = 200; memo.rows = 2; memo.placeholder = TX`메모 (구입일, 오버홀, 특이사항)`; memo.value = w.memo || '';
       memo.setAttribute('aria-label', w.name + TX` 메모`);
-      memo.addEventListener('change', () => { w.memo = memo.value.trim(); saveWatches(); });
+      memo.addEventListener('input', () => { w.memo = memo.value; saveWatches(); });   // save as typed: cards are rebuilt on billing updates
       c.appendChild(memo);
       const acts = el('div', 'acts');
       const b1 = el('button', 'btn primary', TX`이 시계로 측정`); b1.type = 'button';
@@ -1244,7 +1247,7 @@ const TG = (() => {
       const d = new Date(e.ts);
       const cells = [
         `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
-        tx(e.watch), tx(e.pos)
+        wname(e.watch), tx(e.pos)
       ];
       cells.forEach((c, i) => { const td = document.createElement('td'); td.className = ['c-date', 'c-watch', 'c-pos'][i]; td.textContent = c; tr.appendChild(td); });
       [[fmtRate(e.rate) + ' s/d', 'c-rate'], [e.amp ? Math.round(e.amp) + '°' : '—', 'c-amp'], [e.be.toFixed(1) + ' ms', 'c-be']].forEach(([c, k]) => {
@@ -1265,7 +1268,7 @@ const TG = (() => {
       const v = groups[k], m = v.reduce((a, b) => a + b, 0) / v.length;
       const [w, p] = k.split('|');
       const s = document.createElement('span'); s.className = 'chip';
-      s.textContent = TX`${tx(w)} · ${tx(p)}: ${fmtRate(m)} s/d (${v.length}회)`;
+      s.textContent = TX`${wname(w)} · ${tx(p)}: ${fmtRate(m)} s/d (${v.length}회)`;
       return s.outerHTML;
     });
     $('summary').innerHTML = `<div class="chips">${chips.join('')}</div>`;
@@ -1323,7 +1326,7 @@ const TG = (() => {
   $('wav').addEventListener('click', () => {
     if (!lastRec) return;
     const d = new Date(lastRec.ts), p2 = n => String(n).padStart(2, '0');
-    const w = curWatch();
+    const w = lastRec.wname ? { name: lastRec.wname } : null;
     const name = `watchnote_${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}${w ? '_' + w.name.replace(/[\\/:*?"<>|\s]+/g, '-') : ''}.wav`;
     const bytes = wavBytes(lastRec.x, lastRec.sr);
     if (window.AndroidRec && window.AndroidRec.saveWav) {
@@ -1351,7 +1354,7 @@ const TG = (() => {
     }
     $('liveBtn').textContent = TX`실시간 측정 시작`;
     $('pick').classList.remove('disabled');
-    if (final && L.len) { lastRec = { x: L.buf.subarray(0, L.len), sr: L.sr, ts: Date.now() }; $('wav').hidden = false; }
+    if (final && L.len) { const cw = curWatch(); lastRec = { x: L.buf.subarray(0, L.len), sr: L.sr, ts: Date.now(), wname: cw ? cw.name : '' }; $('wav').hidden = false; }
     if (final) {
       try {
         const r = TG.measure(L.buf.subarray(0, L.len), L.sr, opts());
@@ -1380,7 +1383,9 @@ const TG = (() => {
     };
     beginLive(L);
   }
+  function clearRec() { lastRec = null; $('wav').hidden = true; }   // a new result replaces the saved-able recording
   function beginLive(L) {
+    clearRec();
     const sr = L.sr;
     live = L;
     $('save').disabled = true;

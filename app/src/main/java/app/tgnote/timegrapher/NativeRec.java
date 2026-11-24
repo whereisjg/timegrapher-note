@@ -93,7 +93,10 @@ public class NativeRec {
     @JavascriptInterface
     public void saveWav(String b64, final String name) {
         final byte[] data;
-        try { data = Base64.decode(b64, Base64.DEFAULT); } catch (Exception e) { return; }
+        try { data = Base64.decode(b64, Base64.DEFAULT); } catch (Exception e) {
+            act.runOnUiThread(new Runnable() { public void run() { act.fileSaved("fail"); } });
+            return;
+        }
         act.runOnUiThread(new Runnable() { public void run() { act.createFile(data, name, "audio/wav"); } });
     }
 
