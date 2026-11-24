@@ -42,6 +42,7 @@ select,input[type=number]{font:inherit;color:var(--ink);background:var(--bg);bor
 .rate-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 18px}
 .rate{font-family:var(--f-mono);font-size:3.1rem;font-weight:500;line-height:1;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
 .rate small{font-size:1rem;color:var(--muted);margin-left:6px;letter-spacing:0}
+.rate.rough{opacity:.55}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:.75rem;padding:3px 9px;border-radius:999px;background:var(--chip);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .chip.ok{color:var(--ok);border-color:currentColor}
@@ -543,7 +544,7 @@ const TG = (() => {
   function analyzeFold(x, sr, opts) {
     const la = opts.la || 52;
     const dur = x.length / sr;
-    if (dur < 12) throw new Error('약한 신호 모드는 최소 15초, 권장 40~60초 녹음이 필요합니다.');
+    if (dur < 12) throw new Error('녹음이 짧습니다. 최소 12~16초, 권장 60초 이상 재 주세요.');
     const y = highpass(highpass(x, sr, 2000), sr, 2000);
     // energy envelope, downsampled to ~8 kHz, outliers clipped
     const blk = Math.max(1, Math.round(sr / 4000)), fs = sr / blk;
@@ -574,7 +575,7 @@ const TG = (() => {
     const segS = Math.max(2, Math.min(4, 24 * T0));
     const segN = Math.round(segS * fs);
     const nSeg = Math.floor(n / segN);
-    if (nSeg < 5) throw new Error('녹음이 짧아 약한 신호 모드로 계산할 수 없습니다.');
+    if (nSeg < 4) throw new Error('녹음이 짧아 아직 계산할 수 없습니다. 조금 더 재 주세요.');
 
     // pass 0: coarse search over rate (±400 s/d) for the sharpest folded profile
     const iEnd = nSeg * segN;
@@ -617,9 +618,12 @@ const TG = (() => {
       const res = idx.map(i => sh[i] - (b0 + m * tc[i]));
       const sd = Math.sqrt(res.reduce((s, v) => s + v * v, 0) / Math.max(1, k - 2));
       P = P / (1 - m);
-      fitInfo = { tc, sh, idx, b0, m, sd, used: k };
+      // standard error of the slope → uncertainty of the rate (shown as ± on screen)
+      const seM = sd / Math.sqrt(Math.max(1e-12, sxx - sx * sx / k));
+      fitInfo = { tc, sh, idx, b0, m, sd, seM, used: k };
     }
     const rate = (T0 / P - 1) * 86400;
+    const rateErr = fitInfo.seM * 86400 * T0 / P;
 
     // global profile at the final period → beat error
     const P2 = 2 * P, N = Math.round(P2 * fs);
@@ -656,7 +660,7 @@ const TG = (() => {
     }));
     return {
       mode: 'fold', bph, bphAuto: bphAuto || bph, T: T0, rate, beatErr, amp: sa.amp, liftMs: sa.liftMs, la,
-      used: fitInfo.used, segments: nSeg, detected: nSeg, dur, sdMs: fitInfo.sd * 1000, snr,
+      used: fitInfo.used, segments: nSeg, detected: nSeg, dur, sdMs: fitInfo.sd * 1000, snr, rateErr,
       trace, shape: sa.shape
     };
   }
@@ -752,7 +756,7 @@ const TG = (() => {
       mode: base.snr < 25 ? 'fold' : 'tick', engine: 'template',
       bph: base.bph, bphAuto: base.bphAuto, T: T0, rate: base.rate, beatErr, amp, liftMs, la,
       used: Math.round(nSeg * segN / sr / T0), detected: base.detected, segments: nSeg, dur: base.dur,
-      sdMs: base.sdMs, snr: base.snr, trace, shape: sA.shape
+      sdMs: base.sdMs, snr: base.snr, rateErr: base.rateErr, trace, shape: sA.shape
     };
   }
 
@@ -921,12 +925,17 @@ const TG = (() => {
     const expect = r.dur * r.bph / 3600;
     const fold = r.mode === 'fold';
     const shaky = fold ? (r.snr < 6 || r.sdMs > 2) : (r.used < expect * 0.5 || r.sdMs > 1.5);
-    $('rate').innerHTML = shaky ? `불안정<small>신호 약함</small>` : `${fmtRate(r.rate)}<small>초/일</small>`;
+    // ± = standard error of the rate; large while the recording is still short
+    const pm = r.rateErr > 0 ? Math.max(0.1, r.rateErr) : null;
+    const rough = !shaky && pm !== null && pm > 1.5;
+    $('rate').classList.toggle('rough', rough);
+    $('rate').innerHTML = shaky ? `불안정<small>신호 약함</small>`
+      : `${fmtRate(r.rate)}<small>${pm !== null ? `± ${pm < 10 ? pm.toFixed(1) : pm.toFixed(0)} ` : ''}초/일${rough ? ' · 예비값' : ''}</small>`;
     const chips = [];
     const metas = r.rate >= 0 && r.rate <= 5, cosc = r.rate >= -4 && r.rate <= 6;
     chips.push(`<span class="chip ${metas ? 'ok' : 'bad'}">METAS 0~+5 ${metas ? '이내' : '벗어남'}</span>`);
     chips.push(`<span class="chip ${cosc ? 'ok' : 'bad'}">COSC −4~+6 ${cosc ? '이내' : '벗어남'}</span>`);
-    $('chips').innerHTML = shaky ? '' : chips.join('');
+    $('chips').innerHTML = shaky || rough ? '' : chips.join('');
     $('amp').textContent = r.amp ? Math.round(r.amp) + '°' : '—';
     $('be').textContent = r.beatErr.toFixed(1) + ' ms';
     $('bphOut').textContent = r.bph.toLocaleString('en-US');
@@ -1093,7 +1102,7 @@ const TG = (() => {
 
   $('save').addEventListener('click', () => {
     if (!last || lastIsSample) return;
-    log.push({ ts: Date.now(), watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, amp: last.amp, be: last.beatErr, bph: last.bph });
+    log.push({ ts: Date.now(), watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, rateErr: last.rateErr, amp: last.amp, be: last.beatErr, bph: last.bph });
     const ok = store(log); renderLog();
     $('save').disabled = true;
     setStatus(ok ? '기록에 저장했습니다.' : '이 브라우저에서는 저장할 수 없어 이번 화면에서만 보입니다.', !ok);
@@ -1184,7 +1193,7 @@ const TG = (() => {
         else { stopLive(false); setStatus('마이크 입력이 끊겼습니다. 통화 중이거나 다른 앱이 마이크를 쓰고 있는지 확인한 뒤 다시 시작해 주세요.', true); }
         return;
       }
-      if (sec < 15) { setStatus(`측정 중 ${sec.toFixed(0)}초 · 15초부터 결과가 나옵니다.`); return; }
+      if (sec < 12) { setStatus(`측정 중 ${sec.toFixed(0)}초 · 12~16초부터 결과가 나옵니다.`); return; }
       if (performance.now() < (L.next || 0)) { setStatus(`측정 중 ${sec.toFixed(0)}/${LIVE_MAX}초`); return; }
       try {
         const t0 = performance.now();
