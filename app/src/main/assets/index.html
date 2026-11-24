@@ -1213,7 +1213,16 @@ const TG = (() => {
     if (w) { $('bph').value = w.bph; $('la').value = w.la; }
     try { localStorage.setItem('tg-cur-watch', $('watch').value); } catch (e) {}
   }
-  function openForm(w) {
+  // the form lives in the measure tab's setup panel; opened from the library it moves above the cards so the
+  // user stays on the tab they are in
+  const wHome = { p: $('wForm').parentNode, n: $('wForm').nextSibling };
+  function placeForm(inLib) {
+    const f = $('wForm');
+    if (inLib) $('lib').before(f);
+    else if (f.parentNode !== wHome.p) wHome.p.insertBefore(f, wHome.n && wHome.n.parentNode === wHome.p ? wHome.n : null);
+  }
+  function openForm(w, inLib) {
+    placeForm(!!inLib);
     editing = w;
     $('wFormTitle').textContent = w ? TX`시계 편집` : TX`새 시계 추가`;
     $('wName').value = w ? w.name : '';
@@ -1238,7 +1247,7 @@ const TG = (() => {
   });
   function addWatch() {
     if (!pro && watches.length >= FREE_WATCHES) { upsell(TX`무료 버전은 시계를 ${FREE_WATCHES}개까지 등록할 수 있습니다.`); return; }
-    showTab('measure'); openForm(null); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const inLib = !$('tabLib').hidden; openForm(null, inLib); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   $('libAdd').addEventListener('click', addWatch);
   $('wEdit').addEventListener('click', () => { const w = curWatch(); if (w) openForm(w); });
@@ -1251,7 +1260,7 @@ const TG = (() => {
     fillWatches('');
     setStatus(TX`'${w.name}'을(를) 목록에서 지웠습니다. 저장된 측정 기록은 남아 있습니다.`);
   });
-  $('wCancel').addEventListener('click', () => { $('wForm').hidden = true; editing = null; });
+  $('wCancel').addEventListener('click', () => { $('wForm').hidden = true; editing = null; placeForm(false); });
   $('wSave').addEventListener('click', () => {
     const name = $('wName').value.trim();
     if (!name) { $('wName').focus(); setStatus(TX`시계 이름을 입력해 주세요.`, true); return; }
@@ -1265,7 +1274,7 @@ const TG = (() => {
       Object.assign(editing, data);
     }
     else { id = 'w' + Date.now(); watches.push(Object.assign({ id }, data)); }
-    saveWatches(); $('wForm').hidden = true; editing = null; fillWatches(id);
+    saveWatches(); $('wForm').hidden = true; editing = null; placeForm(false); fillWatches(id);
     setStatus(TX`'${name}'을(를) 저장했습니다.`);
   });
 
@@ -1341,7 +1350,7 @@ const TG = (() => {
   function svcBlock(w, el) {
     if (!buyOf(w) && !w.service) {   // nothing entered yet: a tappable prompt instead of an invisible feature
       const b = el('div', 'svc'), a = el('button', 'link', TX`＋ 구매일·오버홀 일자 입력하고 오버홀 주기 확인`); a.type = 'button';
-      a.onclick = () => { showTab('measure'); openForm(w); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => $('wStamp').focus(), 300); };
+      a.onclick = () => { openForm(w, true); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => $('wStamp').focus(), 300); };
       b.appendChild(a); return b;
     }
     const b = el('div', 'svc'), row = (k, v) => { const r = el('div', 'r'); r.append(el('span', null, k), el('b', null, v)); b.appendChild(r); };
@@ -1404,7 +1413,7 @@ const TG = (() => {
       const b2 = el('button', 'btn', TX`기록 보기 (${recs.length})`); b2.type = 'button';
       b2.onclick = () => { logFilter = w.id; renderLog(); $('logPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
       const b3 = el('button', 'btn', TX`편집`); b3.type = 'button';
-      b3.onclick = () => { showTab('measure'); openForm(w); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      b3.onclick = () => { openForm(w, true); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
       acts.append(b1, b2, b3); c.appendChild(acts);
       box.appendChild(c);
     }
