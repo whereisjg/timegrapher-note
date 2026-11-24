@@ -1491,21 +1491,28 @@ const TG = (() => {
   const calmUI = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function tickPulse(L, from, to) {
     if (calmUI || $('mMic').hidden) return;
-    const blk = Math.round(L.sr / 500), gap = Math.round(L.sr * 0.06), now = performance.now();
+    const blk = Math.round(L.sr / 500), gap = Math.round(L.sr * 0.06);
     const P = L.pulse || (L.pulse = { noise: 0, last: -1e9, prev: 0 });
+    const v = [];
     for (let a = from; a + blk <= to; a += blk) {
-      let v = 0;
-      for (let i = a; i < a + blk; i++) { const d = Math.abs(L.buf[i] - P.prev); P.prev = L.buf[i]; if (d > v) v = d; }
-      if (!P.noise) { P.noise = v || 1e-4; continue; }
-      if (v > 6 * P.noise && a - P.last > gap) {
+      let m = 0;
+      for (let i = a; i < a + blk; i++) { const d = Math.abs(L.buf[i] - P.prev); P.prev = L.buf[i]; if (d > m) m = d; }
+      v.push(m);
+    }
+    // noise floor = median block of each chunk (ticks fill only a few blocks); silent start-up chunks are skipped
+    const med = v.slice().sort((x, y) => x - y)[v.length >> 1] || 0;
+    if (med > 0) P.noise = P.noise ? P.noise * 0.8 + med * 0.2 : med;
+    if (!P.noise) return;
+    v.forEach((m, k) => {
+      const a = from + k * blk;
+      if (m > 8 * P.noise && a - P.last > gap) {
         P.last = a;
         setTimeout(ripple, Math.max(0, 100 - (to - a) / L.sr * 1000));
       }
-      if (v < 3 * P.noise) P.noise += (v - P.noise) * 0.01;
-    }
+    });
   }
   function ripple() {
-    const m = $('mMic'); if (m.hidden || m.children.length > 16) return;
+    const m = $('mMic'); if (m.hidden || m.children.length > 9) return;
     const r = document.createElement('i'); r.addEventListener('animationend', () => r.remove()); m.appendChild(r);
   }
   function clearRec() { lastRec = null; $('wav').hidden = true; }   // a new result replaces the saved-able recording
