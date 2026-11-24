@@ -94,6 +94,10 @@ h1 .chip{vertical-align:middle;font-size:.7rem}
 input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
 .mini{display:flex;gap:4px}
 .link{background:none;border:none;color:var(--accent);font:inherit;font-size:.85rem;cursor:pointer;padding:2px 4px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{font:inherit;font-weight:600;background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);padding:10px 14px;cursor:pointer;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .lib{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .card{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:8px;background:var(--bg);min-width:0}
 .card h3{margin:0;font-size:1.05rem;font-weight:600;overflow-wrap:anywhere}
@@ -110,8 +114,9 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
     <h1>타임그래퍼 노트 <span class="chip ok" id="proTag" hidden>프로</span></h1>
     <p>시계 소리를 녹음한 파일을 올리면 하루 오차, 진폭, 비트 에러를 계산합니다. 측정값은 자세별로 기록해 두고 비교할 수 있습니다.</p>
   </header>
+  <nav class="tabs" role="tablist"><button class="tab" role="tab" id="tMeasure" type="button" aria-selected="true">측정</button><button class="tab" role="tab" id="tLib" type="button" aria-selected="false">시계 보관함</button></nav>
 
-  <div class="grid">
+  <div class="grid" id="tabMeasure" role="tabpanel" aria-labelledby="tMeasure">
     <section class="panel" aria-labelledby="setup-h">
       <div class="label" id="setup-h">측정 설정</div>
       <div class="field">
@@ -253,6 +258,7 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
     </section>
   </div>
 
+  <div id="tabLib" role="tabpanel" aria-labelledby="tLib" hidden style="display:grid;gap:20px">
   <section class="panel" aria-labelledby="lib-h">
     <div class="row">
       <div class="label" id="lib-h">시계 보관함</div>
@@ -274,6 +280,7 @@ input[type=text],input[type=date]{font:inherit;color:var(--ink);background:var(-
     </table></div>
     <p class="empty" id="logEmpty">아직 저장된 측정이 없습니다. 파일을 분석한 뒤 '기록에 저장'을 누르면 여기에 쌓입니다.</p>
   </section>
+  </div>
 </div>
 
 <script>
@@ -841,7 +848,7 @@ const TG = (() => {
   const weakHint = () => (BILL && !pro) ? ' 케이스가 두꺼워 조용한 시계는 프로의 약한 신호 모드로 잴 수 있습니다.' : '';
   function upsell(msg) {
     if (!BILL || pro) return;
-    $('proMsg').textContent = msg; $('proMsg').classList.remove('err');
+    showTab('measure'); $('proMsg').textContent = msg; $('proMsg').classList.remove('err');
     $('proBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   function updateProUI() {
@@ -1045,7 +1052,7 @@ const TG = (() => {
   });
   function addWatch() {
     if (!pro && watches.length >= FREE_WATCHES) { upsell(`무료 버전은 시계를 ${FREE_WATCHES}개까지 등록할 수 있습니다.`); return; }
-    openForm(null); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showTab('measure'); openForm(null); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
   $('libAdd').addEventListener('click', addWatch);
   $('wEdit').addEventListener('click', () => { const w = curWatch(); if (w) openForm(w); });
@@ -1106,6 +1113,17 @@ const TG = (() => {
 
   $('logAll').addEventListener('click', () => { logFilter = null; renderLog(); });
 
+  // ---- tabs: 측정 (setup + result) / 시계 보관함 (cards + records) ----
+  function showTab(t) {
+    const m = t !== 'lib';
+    $('tabMeasure').hidden = !m; $('tabLib').hidden = m;
+    $('tMeasure').setAttribute('aria-selected', m); $('tLib').setAttribute('aria-selected', !m);
+    try { localStorage.setItem('tg-tab', m ? 'measure' : 'lib'); } catch (e) {}
+    if (m && last) { drawTrace(last); drawShape(last); }   // canvases have no size while hidden
+  }
+  $('tMeasure').addEventListener('click', () => showTab('measure'));
+  $('tLib').addEventListener('click', () => showTab('lib'));
+
   // ---- watch library: one card per registered watch ----
   function renderLibrary() {
     const box = $('lib'); box.innerHTML = '';
@@ -1144,11 +1162,11 @@ const TG = (() => {
       c.appendChild(memo);
       const acts = el('div', 'acts');
       const b1 = el('button', 'btn primary', '이 시계로 측정'); b1.type = 'button';
-      b1.onclick = () => { $('watch').value = w.id; applyWatch(); $('setup-h').scrollIntoView({ behavior: 'smooth', block: 'start' }); setStatus(`'${w.name}'을(를) 골랐습니다. 자세를 정하고 측정을 시작하세요.`); };
+      b1.onclick = () => { showTab('measure'); $('watch').value = w.id; applyWatch(); $('setup-h').scrollIntoView({ behavior: 'smooth', block: 'start' }); setStatus(`'${w.name}'을(를) 골랐습니다. 자세를 정하고 측정을 시작하세요.`); };
       const b2 = el('button', 'btn', `기록 보기 (${recs.length})`); b2.type = 'button';
       b2.onclick = () => { logFilter = w.id; renderLog(); $('logPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
       const b3 = el('button', 'btn', '편집'); b3.type = 'button';
-      b3.onclick = () => { openForm(w); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      b3.onclick = () => { showTab('measure'); openForm(w); $('wForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
       acts.append(b1, b2, b3); c.appendChild(acts);
       box.appendChild(c);
     }
@@ -1399,8 +1417,10 @@ const TG = (() => {
   const s = TG.synth({ bph: 28800, rate: 3.2, be: 0.4, amp: 285, la: 52, dur: 30 });
   render(TG.analyze(s.x, s.sr, { bph: 'auto', la: 52 }), true);
   renderLog();
+  try { if (localStorage.getItem('tg-tab') === 'lib') showTab('lib'); } catch (e) {}
 
-  const redraw = () => last && (drawTrace(last), drawShape(last));
+  const redraw = () => last && !$('tabMeasure').hidden && (drawTrace(last), drawShape(last));
+  
   window.addEventListener('resize', redraw);
   try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw); } catch (e) {}
   new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
