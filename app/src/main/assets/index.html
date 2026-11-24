@@ -1094,7 +1094,7 @@ const TG = (() => {
     const fold = r.mode === 'fold', tpl = r.engine === 'template';
     const shaky = fold || tpl ? (r.snr < 6 || r.sdMs > 2) : (r.used < expect * 0.5 || r.sdMs > 1.5);
     // ± = standard error of the rate; large while the recording is still short
-    const pm = r.rateErr > 0 ? Math.max(0.1, r.rateErr) : null;
+    const pm = r.rateErr > 0 ? r.rateErr : null;
     const rough = !shaky && pm !== null && pm > 1.5;
     $('rate').classList.toggle('rough', rough);
     $('rate').innerHTML = shaky ? TX`불안정<small>신호 약함</small>`
@@ -1292,7 +1292,7 @@ const TG = (() => {
       const lastR = recs[recs.length - 1];
       if (lastR) {
         const now = el('div', 'now', fmtRate(lastR.rate));
-        now.appendChild(el('small', null, TX`${lastR.rateErr ? '± ' + Math.max(0.1, lastR.rateErr).toFixed(2) + ' ' : ''}초/일 · ${pname(lastR.pos)}`));
+        now.appendChild(el('small', null, TX`${lastR.rateErr ? '± ' + lastR.rateErr.toFixed(2) + ' ' : ''}초/일 · ${pname(lastR.pos)}`));
         c.appendChild(now);
         c.appendChild(el('div', 'sub', TX`최근 ${fmtDate(lastR.ts)} · 진폭 ${lastR.amp ? Math.round(lastR.amp) + '°' : '—'} · 비트 에러 ${lastR.be.toFixed(1)} ms · 기록 ${recs.length}회`));
         if (pro) {
