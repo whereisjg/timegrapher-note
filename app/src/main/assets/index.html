@@ -162,10 +162,12 @@ h1 .chip, h1 .chip.ok{vertical-align:middle;font-family:var(--f-body);font-size:
 .sheet{margin:auto;width:100%;max-width:420px;display:grid;gap:14px;text-align:center}
 .sheet .mwatch{font-family:var(--f-serif);font-size:1.15rem}
 .sheet #mGauge{width:100%;max-width:340px;margin:0 auto -6px;display:block}
-.mic{position:fixed;bottom:0;left:50%;width:0;height:0;pointer-events:none;z-index:21}
+.mic{position:fixed;bottom:34px;left:50%;width:0;height:0;pointer-events:none;z-index:21}
 .mic i{position:absolute;left:-90px;top:-90px;width:180px;height:180px;border-radius:50%;border:2px solid var(--gold);
   opacity:0;animation:ripple 1s ease-out forwards}
-.mic b{position:absolute;left:-5px;top:-5px;width:10px;height:10px;border-radius:50%;background:var(--gold)}
+.mic svg{position:absolute;left:-26px;top:-26px;width:52px;height:52px;color:var(--gold);animation:spin 6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.mic svg{animation:none}}
 @keyframes ripple{0%{transform:scale(.08);opacity:.9}100%{transform:scale(1);opacity:0}}
 .prog{height:2px;background:var(--line);margin:4px 0}
 .prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .9s linear}
@@ -353,7 +355,7 @@ body.modal{overflow:hidden}
 </div>
 
 <div class="overlay" id="mOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="mTitle">
-  <div class="mic" id="mMic" hidden aria-hidden="true"><b></b></div>
+  <div class="mic" id="mMic" hidden aria-hidden="true"><svg viewBox="-26 -26 52 52"><circle r="24" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width=".8"/><path d="M-23 0A23 23 0 0 0 23 0L15 0A15 15 0 0 1-15 0Z" fill="currentColor"/><path d="M-15 0A15 15 0 0 0 15 0Z" fill="currentColor" fill-opacity=".35"/><path d="M-12 4H12M-10 8H10M-6.5 11.5H6.5" stroke="currentColor" stroke-opacity=".6" stroke-width=".7"/><path d="M-23 0H23" stroke="currentColor" stroke-width="1.2"/><circle r="4.5" fill="var(--bg)" stroke="currentColor" stroke-width="1.2"/><circle r="1.6" fill="currentColor"/></svg></div>
   <div class="sheet">
     <div class="label" id="mTitle">실시간 측정</div>
     <div class="mwatch" id="mWatch"></div>
