@@ -32,14 +32,15 @@ public class Billing implements PurchasesUpdatedListener {
     private final SharedPreferences prefs;
     private final BillingClient client;
     private volatile ProductDetails details;
-    // test builds from Android Studio (Run) unlock pro; the signed release bundle is never debuggable
+    // pro is open without buying for builds run from Android Studio (debuggable) and for closed-test bundles built with
+    // proFreeTesting=true (resource pro_free); a normal release bundle is neither
     private final boolean debug;
 
     Billing(MainActivity act, WebView web) {
         this.act = act;
         this.web = web;
         this.prefs = act.getSharedPreferences("billing", 0);
-        this.debug = (act.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        this.debug = (act.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0 || act.getResources().getBoolean(R.bool.pro_free);
         this.client = BillingClient.newBuilder(act)
                 .setListener(this)
                 .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())

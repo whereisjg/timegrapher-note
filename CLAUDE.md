@@ -46,6 +46,7 @@
 - 업로드 키: `C:\keys\timegrapher-upload.jks`, alias `upload` (백업 완료. 절대 저장소에 넣지 말 것)
 - 릴리스: Build > Generate Signed App Bundle → `app/release/app-release.aab`
 - 새 버전마다 `app/build.gradle.kts` 의 `versionCode` +1
+- **테스터용 프로 자동 열림(2026-11-24)**: `gradle.properties`의 `proFreeTesting=true`이면 `res`값 `pro_free`=true(→ `Billing.debug` 경로로 프로 열림)·버전 이름 `1.0.0-test`. **정식 출시(프로덕션) AAB를 만들기 전에 반드시 `proFreeTesting=false`(또는 줄 삭제)로 바꾸고, Play Console 버전 이름에 `-test`가 없는지 확인**. 결제 흐름 시험은 이 값을 false로 둔 빌드를 라이선스 테스터 계정으로
 
 ## 무료 / 프로
 | 기능 | 무료 | 프로 (`pro_unlock`, 제안가 ₩3,900) |
@@ -94,6 +95,7 @@
 - [x] 스토어 스크린샷 6장 `docs/store/screenshots/` (2026-11-24 새 디자인으로 교체: 측정 중·측정 완료·결과·설정·보관함·기록)
 - [ ] 앱 만들기 → 스토어 등록정보·앱 콘텐츠 설문 입력 (입력 답안 정리: `docs/store/play_console_answers.md`)
 - [ ] 인앱 상품 `pro_unlock` 생성 (AAB 업로드 후 가능)
+- [ ] 비공개 테스트용 AAB는 `proFreeTesting=true`(현재 상태)로 빌드 — 프로 자동 열림. 정식 출시 전 false로 되돌릴 것
 - [ ] 비공개 테스트: 테스터 12명 이상 × 14일 연속 (목표 15~20명, 구글 그룹 사용). 개인 계정은 앱마다 필요
 - [ ] 라이선스 테스트 계정으로 결제 시험
 - [ ] 프로덕션 출시 신청
