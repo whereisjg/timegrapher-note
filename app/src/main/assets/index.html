@@ -560,15 +560,14 @@ const TG = (() => {
     // lift time = unlock peak → loudest peak (drop), the same landmarks a timegrapher uses
     const start = unlock;
     const drop = main;
-    let amp = null, liftMs = null;
-    if (start >= 0 && drop > start) {
-      liftMs = (drop - start) / sr * 1000;
-      const s = Math.sin(Math.PI * (liftMs / 1000) / (2 * T));
-      const A = la / (2 * s);
-      if (A > 130 && A < 370) amp = A;
-    }
-
-    return { amp, liftMs, shape: { sm: Array.from(sm), base, start, drop, sr, pre } };
+    // amplitude (and lift time) if the unlock were the bump at sample j
+    const ampAt = j => {
+      if (!(j >= 0 && drop > j)) return { amp: null, liftMs: null };
+      const lm = (drop - j) / sr * 1000, A = la / (2 * Math.sin(Math.PI * (lm / 1000) / (2 * T)));
+      return { amp: A > 130 && A < 370 ? A : null, liftMs: lm };
+    };
+    const first = ampAt(start);
+    return { amp: first.amp, liftMs: first.liftMs, cands: cand, ampAt, shape: { sm: Array.from(sm), base, start, drop, sr, pre } };
   }
 
   /**
@@ -934,6 +933,19 @@ const TG = (() => {
     const wA = circWin(G, dA, pre, post), wB = circWin(G, dB, pre, post);
     const sA = shapeAmp(wA, 1, sr, T0, la, pre), sB = shapeAmp(wB, 1, sr, T0, la, pre);
     // unlock found on neither beat (weak or unusual tick): keep the fold result so the rate is still shown
+    // Tic and toc lift the pallet the same way, so their unlock-to-drop times should agree. When they differ by more
+    // than 10 % one of them took a stray bump (a broad hump, an echo): look for the pair of bumps that agrees best.
+    if (sA.shape.start >= 0 && sB.shape.start >= 0) {
+      const dif = (a, b) => Math.abs(a - b) / ((a + b) / 2);
+      const lA = j => sA.shape.drop - j, lB = j => sB.shape.drop - j;
+      if (dif(lA(sA.shape.start), lB(sB.shape.start)) > 0.10) {
+        let best = null;
+        for (const ja of sA.cands) for (const jb of sB.cands) {
+          const d = dif(lA(ja), lB(jb)); if (d <= 0.10 && (!best || d < best.d)) best = { ja, jb, d };
+        }
+        if (best) for (const [sx, j] of [[sA, best.ja], [sB, best.jb]]) { const r = sx.ampAt(j); sx.shape.start = j; sx.amp = r.amp; sx.liftMs = r.liftMs; }
+      }
+    }
     const okA = sA.shape.start >= 0, okB = sB.shape.start >= 0;
     if (!okA && !okB) return base;
 
