@@ -57,3 +57,15 @@
 ## 5. 중간 점검 글 (7일째쯤)
 
 테스트 일주일째입니다. 앱 지우지 않고 유지해 주셔서 감사해요! 혹시 이상한 점이나 불편한 점이 있으면 알려 주세요. 14일까지 조금만 더 부탁드립니다 🙏
+
+## 6. 번역 확인 부탁 (외국어 친구용, 테스터 참여 안내와 함께)
+
+(독일어 친구 예시 — 영어·일본어·중국어도 같은 틀)
+
+Hi! I made a small app for mechanical watches (it measures how fast or slow a watch runs using the phone's microphone). It has a German translation and I'd love a native speaker to check it.
+- Install it from the Google Play test link: (참여 링크)  (Android + Google account needed)
+- Set your phone to German, or pick "Deutsch" in the language box at the top of the app.
+- Just tell me anything that sounds odd, wrong or unnatural — and whether the watch terms are right (e.g. Abfallfehler, Amplitude, Hebelwinkel, Revision).
+- A screenshot with a note is perfect. Thank you so much!
+
+(안드로이드가 아니거나 설치가 어려운 경우: 독일어 문장 표(CSV)를 대신 보내 달라고 요청)
