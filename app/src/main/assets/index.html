@@ -168,6 +168,8 @@ h1 .chip, h1 .chip.ok{vertical-align:middle;font-family:var(--f-body);font-size:
 .overlay.live{padding-bottom:calc(130px + env(safe-area-inset-bottom, 0px))}   /* room for the balance wheel */
 .sheet{margin:auto;width:100%;max-width:420px;display:grid;gap:14px;text-align:center}
 .sheet .mwatch{font-family:var(--f-serif);font-size:1.15rem}
+.sheet .mpos{justify-self:center;max-width:100%;font:inherit;font-size:.9rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:2px;padding:6px 8px}
+.rp{font:inherit;font-size:.8rem;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:2px;padding:1px 2px;max-width:12em}
 .sheet #mGauge{width:100%;max-width:340px;margin:0 auto -6px;display:block}
 @media (max-height:760px){.sheet{gap:9px}.sheet #mGauge{max-width:250px}.overlay{padding-top:14px}}
 .mic{position:fixed;bottom:56px;left:50%;width:0;height:0;pointer-events:none;z-index:21}
@@ -396,6 +398,7 @@ body.modal{overflow:hidden}
   <div class="sheet">
     <div class="label" id="mTitle">실시간 측정</div>
     <div class="mwatch" id="mWatch"></div>
+    <select id="mPos" class="mpos" aria-label="자세"></select>
     <svg id="mGauge" viewBox="0 0 320 178" role="img" aria-label="오차 계기판"></svg>
     <div class="rate" id="mRate">—</div>
     <div class="prog" aria-hidden="true"><i id="mBar"></i></div>
@@ -541,12 +544,19 @@ const TG = (() => {
     };
     let main = bN;
     for (let j = bN; j < L; j++) if (sm[j] > sm[main]) main = j;
-    const back = Math.round(Math.min(0.015, 0.3 * T) * sr);
+    // the lift time (unlock -> drop) follows from the amplitude, so only look where an amplitude of 180-400 degrees
+    // can put it: this skips the impulse sound (too close) and stray bumps (too far) that were once taken for the unlock
+    const k2 = 2 * T / Math.PI;
+    const liftMax = k2 * Math.asin(Math.min(1, la / (2 * 180))), liftMin = k2 * Math.asin(Math.min(1, la / (2 * 400)));
     const minH = Math.max(0.06 * span, 5 * nstd);
-    let unlock = -1;
-    for (let j = Math.max(bN, main - back); j < main - pw; j++) {
-      if (sm[j] - base > minH && isPk(j)) { unlock = j; break; }
+    // the unlock is the earliest bump in that window that is at least 70 % as tall as the tallest one there
+    // (a much fainter earlier bump is noise or an echo)
+    const cand = []; let tall = 0;
+    for (let j = Math.max(bN, main - Math.round(liftMax * sr)); j <= main - Math.round(liftMin * sr); j++) {
+      if (sm[j] - base > minH && isPk(j)) { cand.push(j); tall = Math.max(tall, sm[j] - base); }
     }
+    let unlock = -1;
+    for (const j of cand) if (sm[j] - base >= 0.7 * tall) { unlock = j; break; }
     // lift time = unlock peak → loudest peak (drop), the same landmarks a timegrapher uses
     const start = unlock;
     const drop = main;
@@ -923,14 +933,16 @@ const TG = (() => {
     const pre = Math.round(Math.min(0.020, 0.45 * T0) * sr), post = Math.round(Math.min(0.012, 0.25 * T0) * sr);
     const wA = circWin(G, dA, pre, post), wB = circWin(G, dB, pre, post);
     const sA = shapeAmp(wA, 1, sr, T0, la, pre), sB = shapeAmp(wB, 1, sr, T0, la, pre);
-    // unlock not found (weak or unusual tick): keep the fold result so the rate is still shown
-    if (!(sA.shape.start >= 0) || !(sB.shape.start >= 0)) return base;
+    // unlock found on neither beat (weak or unusual tick): keep the fold result so the rate is still shown
+    const okA = sA.shape.start >= 0, okB = sB.shape.start >= 0;
+    if (!okA && !okB) return base;
 
     // beat error: time from beat A's unlock to beat B's unlock, against one beat period
     // Measured on the leading edge (25 % height) of the loud drop sound: it is the clearest event of every tick, so
     // it repeats within 0.02 ms between recordings; the faint unlock bump used before was picked wrongly now and then
     // (real recordings, 2026-11-24). The unlock landmark stays as the fallback.
     const rA = riseAt(G, dA, sr, 0.25), rB = riseAt(G, dB, sr, 0.25);
+    if (!(isFinite(rA) && isFinite(rB)) && !(okA && okB)) return base;
     const uA = isFinite(rA) && isFinite(rB) ? rA : dA - pre + sA.shape.start, uB = isFinite(rA) && isFinite(rB) ? rB : dB - pre + sB.shape.start;
     const sep = ((((uB - uA) % N) + N) % N) / sr;
     const c = sep - P;                       // signed: + = toc late
@@ -957,7 +969,7 @@ const TG = (() => {
       mode: base.snr < 25 ? 'fold' : 'tick', engine: 'template',
       bph: base.bph, bphAuto: base.bphAuto, T: T0, rate: base.rate, beatErr, amp, liftMs, la,
       used: Math.round(nSeg * segN / sr / T0), detected: base.detected, segments: nSeg, dur: base.dur,
-      sdMs: base.sdMs, snr: base.snr, rateErr: base.rateErr, trace, shape: sA.shape
+      sdMs: base.sdMs, snr: base.snr, rateErr: base.rateErr, trace, shape: okA ? sA.shape : sB.shape
     };
   }
 
@@ -1529,7 +1541,18 @@ const TG = (() => {
         `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
         wname(e.watch), pname(e.pos)
       ];
-      cells.forEach((c, i) => { const td = document.createElement('td'); td.className = ['c-date', 'c-watch', 'c-pos'][i]; td.textContent = c; tr.appendChild(td); });
+      cells.forEach((c, i) => {
+        const td = document.createElement('td'); td.className = ['c-date', 'c-watch', 'c-pos'][i];
+        if (i === 2) {   // pick another position if the record was saved under the wrong one
+          const sel = document.createElement('select'); sel.className = 'rp'; sel.setAttribute('aria-label', TX`자세`);
+          const vals = Object.keys(POS); if (!vals.includes(e.pos)) vals.push(e.pos);
+          vals.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = pname(v); sel.appendChild(o); });
+          sel.value = e.pos;
+          sel.onchange = () => { e.pos = sel.value; store(log); renderLog(); };
+          td.appendChild(sel);
+        } else td.textContent = c;
+        tr.appendChild(td);
+      });
       [[fmtRate(e.rate) + ' s/d', 'c-rate'], [e.amp ? Math.round(e.amp) + '°' : '—', 'c-amp'], [e.be.toFixed(2) + ' ms', 'c-be']].forEach(([c, k]) => {
         const td = document.createElement('td'); td.className = 'num ' + k; td.textContent = c; tr.appendChild(td);
       });
@@ -1556,7 +1579,8 @@ const TG = (() => {
 
   $('save').addEventListener('click', () => {
     if (!last || lastIsSample) return;
-    log.push({ ts: Date.now(), wid: curWatch() ? curWatch().id : undefined, watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, rateErr: last.rateErr, amp: last.amp, be: last.beatErr, bph: last.bph });
+    lastSavedTs = Date.now();
+    log.push({ ts: lastSavedTs, wid: curWatch() ? curWatch().id : undefined, watch: (curWatch() || { name: '미지정' }).name, pos: $('pos').value, rate: last.rate, rateErr: last.rateErr, amp: last.amp, be: last.beatErr, bph: last.bph });
     const ok = store(log); renderLog();
     $('save').disabled = true;
     setStatus(ok ? TX`기록에 저장했습니다.` : TX`이 브라우저에서는 저장할 수 없어 이번 화면에서만 보입니다.`, !ok);
@@ -1668,7 +1692,10 @@ const TG = (() => {
   // ---- measuring sheet: opens with a live measurement, shows the result and the next actions ----
   function openSheet() {
     const w = curWatch();
-    $('mWatch').textContent = `${w ? w.name : tx('미지정')} · ${$('pos').selectedOptions[0].textContent}`;
+    $('mWatch').textContent = w ? w.name : tx('미지정');
+    const mp = $('mPos'); mp.innerHTML = '';
+    Array.from($('pos').options).forEach(o => { const n = document.createElement('option'); n.value = o.value; n.textContent = o.textContent; mp.appendChild(n); });
+    mp.value = $('pos').value; lastSavedTs = null;
     $('mRate').textContent = '—'; $('mRate').classList.remove('rough'); $('mAmp').textContent = $('mBe').textContent = '—';
     $('mBar').style.width = '0';
     drawGauge(0, 'none', 'mGauge');
@@ -1676,6 +1703,13 @@ const TG = (() => {
     $('mOverlay').hidden = false; document.body.classList.add('modal'); sheetNative(true);
     $('mMic').querySelectorAll('i').forEach(r => r.remove()); $('mMic').hidden = false; $('mOverlay').classList.add('live');
   }
+  // the position can still be corrected while the sheet is up, even after saving: the saved record follows
+  let lastSavedTs = null;
+  $('mPos').addEventListener('change', () => {
+    $('pos').value = $('mPos').value;
+    const r = lastSavedTs && log.find(x => x.ts === lastSavedTs);
+    if (r) { r.pos = $('mPos').value; store(log); renderLog(); }
+  });
   function closeSheet() { $('mOverlay').hidden = true; document.body.classList.remove('modal'); sheetNative(false); }
   function sheetNative(open) { try { if (window.AndroidRec && window.AndroidRec.sheet) window.AndroidRec.sheet(open); } catch (e) {} }
   // Android Back while the sheet is up: cancels a running measurement (no result) and closes the sheet
