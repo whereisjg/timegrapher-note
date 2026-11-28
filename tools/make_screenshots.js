@@ -11,8 +11,8 @@ const log = [
  [t(24,17,6), 'h', 1.93, 297, .68], [t(24,17,17), 'h', 1.75, 286, .02], [t(24,17,36), 'h', 3.23, 290, .56], [t(24,20,43), 'h', 2.53, 305, .12], [t(24,20,48), 'h', 1.88, 309, .16],
 ].map(([ts, w, rate, amp, be]) => ({ ts, wid: w, watch: w === 't' ? '튜더 블랙베이 58' : '해밀턴 카키필드 36mm', pos: '다이얼 위', rate, rateErr: .05, amp, be, bph: w === 't' ? 28800 : 21600 })).sort((a, b) => a.ts - b.ts);
 const watches = [
- { id: 't', name: '튜더 블랙베이 58', mov: '', bph: '28800', la: 52, stamp: '2026-11-18', svcYears: 5, memo: '' },
- { id: 'h', name: '해밀턴 카키필드 36mm', mov: '', bph: '21600', la: 50, svcYears: 5, memo: '' },
+ { id: 't', name: '튜더 블랙베이 58', mov: '', bph: '28800', la: 52, stamp: '2026-11-18', svcYears: 5, memo: '', dial: 'black' },
+ { id: 'h', name: '해밀턴 카키필드 36mm', mov: '', bph: '21600', la: 50, svcYears: 5, memo: '', dial: 'green' },
 ];
 (async () => { const b = await chromium.launch();
   const ctx = await b.newContext({ colorScheme: 'light', viewport: { width: 390, height: 780 }, deviceScaleFactor: 1080 / 390, acceptDownloads: true }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
@@ -29,6 +29,6 @@ const watches = [
   await p.waitForTimeout(8000); if (await p.isVisible('#mStop')) await p.waitForFunction(() => !document.querySelector('#mStop') || document.querySelector('#mStop').hidden, null, { timeout: 30000 }).catch(() => {});
   await p.waitForTimeout(500); await p.click('#mClose'); await p.waitForTimeout(1200); await p.evaluate(() => { const y = document.getElementById('res-h').getBoundingClientRect().top + window.scrollY - 28; window.scrollTo(0, y); }); await shot('3_result.png');
   await p.click('#shareImg'); await p.waitForTimeout(500); fs.writeFileSync(path.join(OUT, '6_result_image.png'), Buffer.from(await p.evaluate(() => window.__saved), 'base64'));
-  await p.evaluate(() => window.scrollTo(0, 0)); await p.click('#tLib'); await p.waitForTimeout(500); await p.evaluate(() => window.scrollTo(0, 0)); await shot('4_library.png');
+  await p.evaluate(() => window.scrollTo(0, 0)); await p.click('#tLib'); await p.waitForTimeout(500); await p.evaluate(() => { window.scrollTo(0, 0); const r = document.getElementById('remindRow'); if (r) r.style.display = 'none'; document.querySelectorAll('#lib textarea').forEach(t => t.style.display = 'none'); document.querySelectorAll('#lib .acts').forEach(t => t.style.display = 'none'); }); await shot('4_library.png');
   await p.evaluate(() => document.getElementById('logPanel').scrollIntoView({ block: 'start' })); await shot('5_records.png');
   console.log('errors', errs); await b.close(); })();
