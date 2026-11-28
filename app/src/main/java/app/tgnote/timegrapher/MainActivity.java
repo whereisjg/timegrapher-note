@@ -2,6 +2,7 @@ package app.tgnote.timegrapher;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -11,6 +12,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -38,6 +40,7 @@ public class MainActivity extends Activity {
     private NativeRec rec;
     private Billing billing;
     private byte[] pendingFile;   // waiting for the user to pick where to save it
+    private Uri cameraUri;        // where the camera is saving the photo being taken
     private boolean sheetOpen;    // the measuring sheet is up: Back closes it instead of leaving the app
     private Object backCb;        // OnBackInvokedCallback on Android 13+ (Object so older phones never load the class)
 
@@ -112,6 +115,21 @@ public class MainActivity extends Activity {
                 boolean json = false, image = false;
                 String[] acc = p.getAcceptTypes();
                 if (acc != null) for (String t : acc) { if (t != null && t.contains("json")) json = true; if (t != null && t.startsWith("image")) image = true; }
+                if (image && p.isCaptureEnabled() && Build.VERSION.SDK_INT >= 29) {   // 'take a photo': open the camera directly
+                    try {
+                        ContentValues cv = new ContentValues();
+                        cv.put(MediaStore.Images.Media.DISPLAY_NAME, "watchnote_" + System.currentTimeMillis() + ".jpg");
+                        cv.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                        cv.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/WatchNote");
+                        cameraUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
+                        Intent cam = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        cam.putExtra(MediaStore.EXTRA_OUTPUT, cameraUri);
+                        startActivityForResult(cam, 2);
+                        return true;
+                    } catch (Exception e) {
+                        cameraUri = null;   // no camera app: fall back to picking from the gallery
+                    }
+                }
                 if (image) i.setType("image/*");   // a watch photo
                 else if (!json) i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"audio/*", "video/*"});
                 try {
@@ -232,7 +250,11 @@ public class MainActivity extends Activity {
         }
         if (code == 2 && fileCb != null) {
             Uri[] r = null;
-            if (result == RESULT_OK && data != null && data.getData() != null) r = new Uri[]{data.getData()};
+            if (cameraUri != null) {   // the camera wrote straight to cameraUri
+                if (result == RESULT_OK) r = new Uri[]{cameraUri};
+                else { try { getContentResolver().delete(cameraUri, null, null); } catch (Exception e) { } }
+                cameraUri = null;
+            } else if (result == RESULT_OK && data != null && data.getData() != null) r = new Uri[]{data.getData()};
             fileCb.onReceiveValue(r);
             fileCb = null;
         }
