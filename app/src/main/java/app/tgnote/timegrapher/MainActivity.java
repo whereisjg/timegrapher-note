@@ -109,12 +109,13 @@ public class MainActivity extends Activity {
                 i.addCategory(Intent.CATEGORY_OPENABLE);
                 i.setType("*/*");
                 // recordings for analysis; a backup file (json) shows every file, since phones label json differently
-                boolean json = false;
+                boolean json = false, image = false;
                 String[] acc = p.getAcceptTypes();
-                if (acc != null) for (String t : acc) if (t != null && t.contains("json")) json = true;
-                if (!json) i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"audio/*", "video/*"});
+                if (acc != null) for (String t : acc) { if (t != null && t.contains("json")) json = true; if (t != null && t.startsWith("image")) image = true; }
+                if (image) i.setType("image/*");   // a watch photo
+                else if (!json) i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"audio/*", "video/*"});
                 try {
-                    startActivityForResult(json ? i : Intent.createChooser(i, getString(R.string.pick_audio)), 2);
+                    startActivityForResult(json || image ? i : Intent.createChooser(i, getString(R.string.pick_audio)), 2);
                 } catch (Exception e) {
                     fileCb = null;
                     return false;
