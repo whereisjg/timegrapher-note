@@ -109,6 +109,14 @@ public class NativeRec {
     @JavascriptInterface
     public void setReminders(String json) { Reminders.save(act, json); }
 
+    /** Lunchtime "which watch today?" plan from the page (JSON, see WearNote). */
+    @JavascriptInterface
+    public void setWearPlan(String json) { WearNote.save(act, json); }
+
+    /** Watches picked from the lunchtime notification since the page last asked ([{d, wid}]); cleared once taken. */
+    @JavascriptInterface
+    public String takeWear() { return WearNote.take(act); }
+
     /** Whether notifications can be shown right now (permission granted and not switched off). */
     @JavascriptInterface
     public boolean notifOk() { return act.notificationsAllowed(); }

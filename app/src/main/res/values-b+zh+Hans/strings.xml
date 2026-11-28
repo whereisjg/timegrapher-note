@@ -3,4 +3,5 @@
     <string name="app_name">手表笔记</string>
     <string name="pick_audio">选择录音文件</string>
     <string name="notif_channel">大修提醒</string>
+    <string name="notif_channel_wear">今日佩戴提醒</string>
 </resources>

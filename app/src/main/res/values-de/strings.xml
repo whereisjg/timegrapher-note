@@ -3,4 +3,5 @@
     <string name="app_name">Watch Note</string>
     <string name="pick_audio">Aufnahme wählen</string>
     <string name="notif_channel">Revisions-Erinnerungen</string>
+    <string name="notif_channel_wear">Uhr des Tages</string>
 </resources>

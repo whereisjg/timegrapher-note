@@ -3,4 +3,5 @@
     <string name="app_name">워치노트</string>
     <string name="pick_audio">녹음 파일 선택</string>
     <string name="notif_channel">오버홀 알림</string>
+    <string name="notif_channel_wear">오늘 찬 시계 묻기</string>
 </resources>
