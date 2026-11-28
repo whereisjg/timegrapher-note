@@ -94,7 +94,7 @@
 - [x] 서명된 AAB 빌드 성공
 - [x] 개인정보처리방침 공개 페이지: https://claude.ai/artifact/JaLhzRRS3HtuCX1e4V5The (2026-11-24 자동 백업·백업 파일·알림 내용 추가)
 - [x] 스토어 소개문·아이콘 512·그래픽 1024×500 → `docs/store/` (2026-11-24 작성. 그 전 체크는 잘못 적힌 것이었음)
-- [ ] 스토어 스크린샷 6장 `docs/store/screenshots/` — 2026-11-28 디자인이 크게 바뀌어 **폰에서 새로 찍어야 함**(옛 화면이 올라가 있음). 아이콘·그래픽 이미지는 새 디자인으로 교체함
+- [x] 스토어 스크린샷 6장 `docs/store/screenshots/` (2026-11-28 새 디자인: 앱 화면을 폰 크기로 띄워 실제 녹음 파일의 진짜 측정 결과를 캡처 — `tools/make_screenshots.js`). 아이콘·그래픽 이미지도 새 디자인
 - [ ] 앱 만들기 → 스토어 등록정보·앱 콘텐츠 설문 입력 (입력 답안 정리: `docs/store/play_console_answers.md`)
 - [ ] 인앱 상품 `pro_unlock` 생성 (AAB 업로드 후 가능)
 - [ ] 비공개 테스트용 AAB는 `proFreeTesting=true`(현재 상태)로 빌드 — 프로 자동 열림. 정식 출시 전 false로 되돌릴 것
